@@ -12,9 +12,9 @@ MVP = **`@filelinks/core` + `filelinks` CLI** (shippable, demo via `npx`). Align
 Aligned with the doc **Step 2 — Define the config schema (core)** and **Step 3 — Implement core logic**, with Step 2 using the **same override pattern as ESLint / Prettier**: global options object + per-entry overrides (here: global `FileLinkConfig` + per-link `prompt`).
 
 - [x] **CORE-01**: Exported schema: `PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`; `defineLinks(links, config?)` returns `{ links, config }` (see Phase 1 context for the canonical TypeScript contract).
-- [ ] **CORE-02**: Config loader finds and loads `filelinks.config.ts` with **`jiti`** (walk up from cwd); default export is `{ links, config }`; surfaces clear errors.
-- [ ] **CORE-03**: Git reader returns staged file paths for `check` (e.g. `git diff --name-only --cached` behavior as specified in implementation plan).
-- [ ] **CORE-04**: Link matcher takes staged paths + loaded `links`; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
+- [x] **CORE-02**: Config loader finds and loads `filelinks.config.ts` with **`jiti`** (walk up from cwd); default export is `{ links, config }`; surfaces clear errors.
+- [x] **CORE-03**: Git reader returns staged file paths for `check` (e.g. `git diff --name-only --cached` behavior as specified in implementation plan).
+- [x] **CORE-04**: Link matcher takes staged paths + loaded `links`; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
 - [x] **CORE-05**: `packages/core/src/promptResolver.ts` exports `resolvePrompt(globalConfig, link)` merging `PromptConfig` with **object spread** (global first, link overrides) for any key defined on either side—used by future `suggest`; no AI calls in Phase 1.
 
 ### CLI
@@ -65,9 +65,9 @@ Deferred; tracked for roadmap after MVP.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CORE-01 | Phase 1 — Core library | Complete |
-| CORE-02 | Phase 1 — Core library | Pending |
-| CORE-03 | Phase 1 — Core library | Pending |
-| CORE-04 | Phase 1 — Core library | Pending |
+| CORE-02 | Phase 1 — Core library | Complete |
+| CORE-03 | Phase 1 — Core library | Complete |
+| CORE-04 | Phase 1 — Core library | Complete |
 | CORE-05 | Phase 1 — Core library | Complete |
 | CLI-01 | Phase 2 — CLI MVP | Pending |
 | CLI-02 | Phase 2 — CLI MVP | Pending |
