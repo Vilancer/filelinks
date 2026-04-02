@@ -77,7 +77,7 @@ completed: 2026-04-02
 4. **Task 4: linkMatcher.ts** — `ec515c9` (feat)
 5. **Task 5: index exports** — `f859864` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `00b5844` (docs: complete plan + verification)
 
 ## Files Created/Modified
 

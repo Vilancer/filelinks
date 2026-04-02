@@ -14,13 +14,12 @@ When someone changes a file, they get a reliable signal about which related file
 
 - ✓ **Nx monorepo with pnpm** — existing (`nx.json`, `pnpm-workspace.yaml`, `package.json`).
 - ✓ **Publishable packages scaffolded** — `@filelinks/core`, `filelinks` (CLI), `@filelinks/git-hook` with `tsc` build, Vitest, ESLint (`packages/*/project.json`).
-- ✓ **Placeholder public API** — each package exports a stub function and spec (`packages/*/src/lib/*.ts`).
+- ✓ **MVP: declarative config (Phase 1)** — `PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `defineLinks(links, config?)` → `{ links, config }`; **`jiti`** loads `filelinks.config.ts` (walk up tree); `resolvePrompt` for global vs per-link prompt merge.
+- ✓ **MVP: git integration (Phase 1)** — staged paths via `git diff -z --name-only --cached`; repo root via `git rev-parse --show-toplevel` (`packages/core/src/lib/gitReader.ts`).
+- ✓ **MVP: link matching (Phase 1)** — `matchStagedLinks` with `minimatch` on repo-root-relative patterns (`packages/core/src/lib/linkMatcher.ts`).
 
 ### Active
 
-- [ ] **MVP: declarative config** — Schema per Phase 1 (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `defineLinks(links, config?)` → `{ links, config }`); **`jiti`** loads `filelinks.config.ts` (walk up tree); `resolvePrompt` for global vs per-link prompt merge (future `suggest`).
-- [ ] **MVP: git integration** — read staged files (e.g. `git diff --name-only --cached`) for `check`.
-- [ ] **MVP: link matching** — match triggers and affected paths with glob semantics (`minimatch` per doc).
 - [ ] **MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
 - [ ] **MVP: demo story** — README with install, minimal `filelinks.config.ts` example, `npx filelinks` usage; packages publishable to npm.
 
@@ -36,7 +35,7 @@ When someone changes a file, they get a reliable signal about which related file
 
 - Product specification: `docs/filelinks-docs.docx` (config shape, CLI commands, phased roadmap).
 - Codebase map: `.planning/codebase/` (stack, structure, conventions).
-- Current code is **scaffold only**; behavior matches the doc only after MVP implementation.
+- **`@filelinks/core`** implements Phase 1 schema, config load, git reader, matcher, and `resolvePrompt` (see `01-VERIFICATION.md`). CLI packages remain scaffold until Phase 2.
 
 ## Constraints
 
@@ -47,7 +46,7 @@ When someone changes a file, they get a reliable signal about which related file
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| MVP = core + CLI only | User direction + doc “Where to start”; single demo surface. | — Pending |
+| MVP = core + CLI only | User direction + doc “Where to start”; single demo surface. | Core library complete (Phase 1); CLI next |
 | Defer AI `suggest` until after MVP | Doc places AI in a later phase; MVP proves matching + CLI. | — Pending |
 | Cross-file links are declarative, not import-graph | Doc positioning vs linters; intent-driven. | — Pending |
 
@@ -71,4 +70,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after Phase 1 schema amendment (prompt overrides + jiti)*
+*Last updated: 2026-04-02 — Phase 1 core library executed (schema, jiti loader, git reader, matcher)*
