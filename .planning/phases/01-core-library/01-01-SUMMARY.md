@@ -66,7 +66,7 @@ completed: 2026-04-02
 3. **Task 3: Unit tests for defineLinks and resolvePrompt** — `7d47f06` (test)
 4. **Task 4: Barrel exports and remove stub core** — `dd2f5a3` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `1cef82a` (docs: complete plan)
 
 ## Files Created/Modified
 
