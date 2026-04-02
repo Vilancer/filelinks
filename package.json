@@ -1,0 +1,19 @@
+{
+  "name": "filelinks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "@nx/node": "^22.6.4",
+    "@nx/react": "^22.6.4",
+    "nx": "22.6.4"
+  },
+  "nx": {}
+}
