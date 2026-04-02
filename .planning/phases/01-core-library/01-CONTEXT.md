@@ -87,13 +87,13 @@ export function resolvePrompt(
   link: FileLinkEntry
 ): PromptConfig {
   return {
-    ...globalConfig.prompt,
-    ...link.prompt,
+    ...(globalConfig.prompt ?? {}),
+    ...(link.prompt ?? {}),
   };
 }
 ```
 
-- **D-02:** Single shallow spread: link wins on any key it defines; unspecified keys fall back to global `prompt`. No AI calls in Phase 1—this exists so **`filelinks suggest`** (later) can consume a single resolved `PromptConfig` per link.
+- **D-02:** Shallow spread after defaulting optional `prompt` to `{}` so `undefined` is never spread; link wins on any key it defines. No AI calls in Phase 1—this exists so **`filelinks suggest`** (later) can consume a single resolved `PromptConfig` per link.
 
 ### Config loading (runtime)
 

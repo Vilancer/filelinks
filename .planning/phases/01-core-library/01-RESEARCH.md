@@ -18,7 +18,7 @@ Focused notes for implementing `@filelinks/core` Phase 1 (no external agent run 
 ### Git integration
 
 - **`child_process.execFile('git', args, { cwd })`**: Avoid shell injection; cwd = repo root from `git rev-parse --show-toplevel`.
-- **Staged files:** `git diff --z --name-only --cached` or standard `--name-only --cached`; normalize output to repo-relative paths.
+- **Staged files:** Prefer **`git diff -z --name-only --cached`** and split on `\0` so paths with spaces/newlines are safe; aligns with cross-AI review (`01-REVIEWS.md`).
 
 ### Testing
 
