@@ -18,7 +18,7 @@ When someone changes a file, they get a reliable signal about which related file
 
 ### Active
 
-- [ ] **MVP: declarative config** — `FileLinkEntry` / `AffectedFile` / `defineLinks` as in the doc; load `filelinks.config.ts` from project root (walk up tree).
+- [ ] **MVP: declarative config** — Schema per Phase 1 (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `defineLinks(links, config?)` → `{ links, config }`); **`jiti`** loads `filelinks.config.ts` (walk up tree); `resolvePrompt` for global vs per-link prompt merge (future `suggest`).
 - [ ] **MVP: git integration** — read staged files (e.g. `git diff --name-only --cached`) for `check`.
 - [ ] **MVP: link matching** — match triggers and affected paths with glob semantics (`minimatch` per doc).
 - [ ] **MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
@@ -71,4 +71,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after initialization*
+*Last updated: 2026-04-02 after Phase 1 schema amendment (prompt overrides + jiti)*

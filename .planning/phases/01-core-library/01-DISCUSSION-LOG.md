@@ -5,28 +5,33 @@
 
 **Date:** 2026-04-02  
 **Phase:** 01 — Core library  
-**Mode:** discuss (single-pass consolidation — see notes)
-
-**Areas covered:** Config schema & TS config loading, git staged listing, minimatch semantics, module layout, repo integration
+**Amendment:** 2026-04-02 — Schema override model + `PromptConfig` + `jiti` + `resolvePrompt`
 
 ---
 
-## Session note
+## Amendment: Step 2 / Step 3 + ESLint-style config
 
-ROADMAP headings originally used `## Phase 1 — …` (em dash). GSD’s parser requires `## Phase 1: …` (colon). `.planning/ROADMAP.md` was updated so `init phase-op 1` resolves the phase.
+**User direction:** Phase 1 tracks the doc **Step 2 — Define the config schema (core)** and **Step 3 — Implement core logic**, with Step 2 updated to:
+
+- Global `FileLinkConfig` + per-link overrides on `FileLinkEntry` (same *pattern* as ESLint / Prettier).
+- `PromptConfig` on global and per-link for future `suggest`.
+- `defineLinks(links, config?)` returns `{ links, config }`.
+- `resolvePrompt(globalConfig, link)` via object spread (global first, link wins per key).
+- Runtime load: **`jiti`** for `filelinks.config.ts`.
+
+Prior log entries below remain valid where not superseded by `01-CONTEXT.md`.
 
 ---
 
-## Config schema
+## Session note (original)
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Doc-aligned `FileLinkEntry` / `AffectedFile` / `defineLinks` | Matches `docs/filelinks-docs.docx` | ✓ |
-| Alternate JSON-only config | Simpler but diverges from doc | |
+ROADMAP headings must use `## Phase 1: …` (colon) for GSD `init phase-op`.
 
-**User's choice:** Doc-aligned TypeScript config (implicit: product spec is source of truth).
+---
 
-**Notes:** Severity `warn` | `error` preserved for Phase 2 CLI exit behavior.
+## Config schema (superseded by amendment)
+
+Earlier draft used a simpler `defineLinks` array-only helper. **Superseded** by the canonical TypeScript in `01-CONTEXT.md`.
 
 ---
 
@@ -34,10 +39,7 @@ ROADMAP headings originally used `## Phase 1 — …` (em dash). GSD’s parser 
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| `jiti` (or similar) inside `@filelinks/core` | Load `.ts` without user compile step | ✓ |
-| JS-only `filelinks.config.cjs` for v1 | No extra dep | |
-
-**User's choice:** Prefer `jiti` with fallback note if ESM/CJS interop blocks (planner to validate).
+| `jiti` inside `@filelinks/core` | Load `.ts` without user compile step | ✓ |
 
 ---
 
@@ -45,10 +47,7 @@ ROADMAP headings originally used `## Phase 1 — …` (em dash). GSD’s parser 
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| `git diff --name-only --cached` via `execFile` | Matches MVP “staged” story | ✓ |
-| libgit2 / simple-git | Heavier dependency | |
-
-**User's choice:** Spawn `git`; discover repo root via `git rev-parse --show-toplevel`.
+| `git diff --name-only --cached` via `execFile` | Staged paths for check | ✓ |
 
 ---
 
@@ -56,17 +55,18 @@ ROADMAP headings originally used `## Phase 1 — …` (em dash). GSD’s parser 
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| `minimatch` per doc sample | Explicit in doc | ✓ |
-| `micromatch` | Alternative | |
-
-**User's choice:** `minimatch` aligned with doc’s `linkMatcher` example.
+| `minimatch` | Per doc / original sample | ✓ |
 
 ---
 
-## Claude's Discretion
+## Prompt merge
 
-- Sync vs async config API, exact error strings, internal Map shape for match results.
+| Option | Description | Selected |
+|--------|-------------|----------|
+| `resolvePrompt` shallow spread | `...global.prompt`, `...link.prompt` | ✓ |
+
+---
 
 ## Deferred Ideas
 
-- `--all` / unstaged scanning, AI providers, hooks — out of phase scope per `ROADMAP.md`.
+- AI provider calls — not Phase 1.

@@ -9,10 +9,13 @@ MVP = **`@filelinks/core` + `filelinks` CLI** (shippable, demo via `npx`). Align
 
 ### Core library
 
-- [ ] **CORE-01**: Exported schema types (`FileLinkEntry`, `AffectedFile`) and `defineLinks()` helper per doc.
-- [ ] **CORE-02**: Config loader finds and loads `filelinks.config.ts` (or documented equivalent) by walking up from cwd; surfaces clear errors.
+Aligned with the doc **Step 2 — Define the config schema (core)** and **Step 3 — Implement core logic**, with Step 2 using the **same override pattern as ESLint / Prettier**: global options object + per-entry overrides (here: global `FileLinkConfig` + per-link `prompt`).
+
+- [ ] **CORE-01**: Exported schema: `PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`; `defineLinks(links, config?)` returns `{ links, config }` (see Phase 1 context for the canonical TypeScript contract).
+- [ ] **CORE-02**: Config loader finds and loads `filelinks.config.ts` with **`jiti`** (walk up from cwd); default export is `{ links, config }`; surfaces clear errors.
 - [ ] **CORE-03**: Git reader returns staged file paths for `check` (e.g. `git diff --name-only --cached` behavior as specified in implementation plan).
-- [ ] **CORE-04**: Link matcher takes staged paths + loaded links; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
+- [ ] **CORE-04**: Link matcher takes staged paths + loaded `links`; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
+- [ ] **CORE-05**: `packages/core/src/promptResolver.ts` exports `resolvePrompt(globalConfig, link)` merging `PromptConfig` with **object spread** (global first, link overrides) for any key defined on either side—used by future `suggest`; no AI calls in Phase 1.
 
 ### CLI
 
@@ -53,7 +56,7 @@ Deferred; tracked for roadmap after MVP.
 
 | Feature | Reason |
 |---------|--------|
-| AI `suggest` in v1 | MVP proves core matching + CLI; AI is separate complexity (keys, prompts, cost). |
+| AI `suggest` in v1 | MVP proves core matching + CLI; **prompt fields and `resolvePrompt` ship in core** for when `suggest` lands—no provider calls in v1. |
 | `git-hook` in v1 | Thin wrapper; ship after `check` is solid. |
 | VS Code / graph in v1 | Editor and visualization follow CLI MVP per doc ordering. |
 
@@ -65,6 +68,7 @@ Deferred; tracked for roadmap after MVP.
 | CORE-02 | Phase 1 — Core library | Pending |
 | CORE-03 | Phase 1 — Core library | Pending |
 | CORE-04 | Phase 1 — Core library | Pending |
+| CORE-05 | Phase 1 — Core library | Pending |
 | CLI-01 | Phase 2 — CLI MVP | Pending |
 | CLI-02 | Phase 2 — CLI MVP | Pending |
 | CLI-03 | Phase 2 — CLI MVP | Pending |
@@ -73,10 +77,10 @@ Deferred; tracked for roadmap after MVP.
 
 **Coverage:**
 
-- v1 requirements: 9 total  
-- Mapped to phases: 9  
+- v1 requirements: 10 total  
+- Mapped to phases: 10  
 - Unmapped: 0 ✓  
 
 ---
 *Requirements defined: 2026-04-02*  
-*Last updated: 2026-04-02 after initial definition*
+*Last updated: 2026-04-02 after Phase 1 schema / prompt override amendment*

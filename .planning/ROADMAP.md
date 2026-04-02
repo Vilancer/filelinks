@@ -7,23 +7,31 @@
 
 | Phase | Name | Goal | Requirements |
 |-------|------|------|----------------|
-| 1 | Core library | Config schema, load config, read git staged files, match links | CORE-01 — CORE-04 |
+| 1 | Core library | Step 2: schema + `defineLinks` overrides; Step 3: git, matcher, `promptResolver` + **jiti** loader | CORE-01 — CORE-05 |
 | 2 | CLI MVP | Commander commands + bin + README for `npx` demo | CLI-01 — CLI-04, DOC-01 |
 
 ---
 
 ## Phase 1: Core library
 
-**Goal:** `@filelinks/core` implements declarative link definitions, discovers config from the repo, reads staged paths from git, and computes “trigger fired + missing affected files” for downstream CLI.
+**Goal:** `@filelinks/core` follows the product doc build order: **Step 2 — config schema** (ESLint/Prettier-style global + per-link overrides, including `PromptConfig` for future AI) and **Step 3 — core logic** (load config with **jiti**, git staged paths, `minimatch` link matching, `resolvePrompt` merge helper). No CLI binary work, no AI provider calls.
 
-**Requirements:** CORE-01, CORE-02, CORE-03, CORE-04
+**Requirements:** CORE-01, CORE-02, CORE-03, CORE-04, CORE-05
+
+**Doc steps in this phase:**
+
+| Doc step | Deliverable |
+|----------|-------------|
+| Step 2 — Define the config schema (core) | Types + `defineLinks(links, config?)` → `{ links, config }`; `PromptConfig` / `FileLinkConfig` / per-entry `prompt` (see `01-CONTEXT.md`) |
+| Step 3 — Implement core logic | `configLoader` (**jiti**), `gitReader`, `linkMatcher`, `promptResolver` |
 
 **Success criteria:**
 
-1. A test project can import `defineLinks` and load a `filelinks.config.ts` from disk.
-2. Given a fixed list of staged paths and a config, the matcher returns the expected missing affected files for at least glob and exact paths (covered by unit tests).
-3. Git reader behavior is documented and testable (unit tests with mocked git or fixture repo as appropriate).
-4. `nx build core` and `nx test core` pass.
+1. A test project can import `defineLinks`, author `filelinks.config.ts` with `export default defineLinks([...], { ... })`, and load it from disk via the public loader API.
+2. Given a fixed list of staged paths and resolved `links`, the matcher returns the expected missing affected files for glob and exact paths (unit tests).
+3. `resolvePrompt(globalConfig, link)` returns merged `PromptConfig` (global spread, then link override) with unit tests for partial overrides.
+4. Git reader behavior is documented and testable (mocked git or fixture repo).
+5. `nx build core` and `nx test core` pass.
 
 **UI hint:** no
 
@@ -52,4 +60,5 @@
 Order follows `docs/filelinks-docs.docx`: git-hook → AI suggest → graph → VS Code → Nx plugin. See **v2** in `REQUIREMENTS.md`.
 
 ---
-*Roadmap created: 2026-04-02*
+*Roadmap created: 2026-04-02*  
+*Last updated: 2026-04-02 — Phase 1 mapped to doc Step 2/3 + CORE-05*
