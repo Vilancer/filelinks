@@ -1,44 +1,38 @@
 # Architecture
 
-**Snapshot:** There is **no executable architecture** in the repository yet—no modules, entry points, or runtime boundaries. This section reflects the **stated product intent** from `README.md` and what that implies for future design.
+## Pattern
 
-## Product intent
+**Nx monorepo** with multiple **publishable TypeScript libraries** (`projectType: "library"` in each package `project.json`). The repo is in an early scaffold phase: each library exports a single placeholder function and a minimal spec.
 
-From `README.md`:
+## Packages and roles
 
-- **filelinks** should be a **language-agnostic** way to declare **semantic relationships between files**.
-- Consumers include **AI agents**, **git hooks**, and **editors**, which need to know **what to check when something changes**.
+| Package | Name (npm) | Role |
+|---------|------------|------|
+| `packages/core` | `@filelinks/core` | Shared core library — intended for shared logic. |
+| `packages/cli` | `filelinks` | CLI-facing package (name `filelinks` in `packages/cli/package.json`). |
+| `packages/git-hook` | `@filelinks/git-hook` | Git hook–related library. |
 
-## Implied architectural concerns (future)
+Source entry points re-export lib modules:
 
-When implemented, the system will likely need:
+- `packages/core/src/index.ts` → `./lib/core`
+- `packages/cli/src/index.ts` → `./lib/cli`
+- `packages/git-hook/src/index.ts` → `./lib/git-hook`
 
-1. **A declarative format** — how relationships are stored (e.g. config file(s), embedded metadata, or a small DSL).
-2. **Resolution** — mapping from a changed file to related files or checks.
-3. **Tooling surfaces** — libraries or CLIs for hooks and editor extensions; possibly an LSP or simple parser.
+## Build and output
 
-## Current layers
-
-| Layer | Present? | Notes |
-|--------|----------|--------|
-| Entry point (CLI, library) | No | No `src/`, `cmd/`, or `main` |
-| Domain model | No | No types or schemas checked in |
-| Persistence | No | N/A |
-| External I/O | No | See `INTEGRATIONS.md` |
+- **Build:** `@nx/js:tsc` compiles each package from `src/` to `dist/packages/<project>/` using `tsconfig.lib.json` per package.
+- **Release:** `nx-release-publish` targets point at `dist/{projectRoot}` with version resolution from git tags (`currentVersionResolver: "git-tag"` in `project.json` files).
 
 ## Data flow
 
-- **Not applicable** until code exists. Expected future flow (conceptual): **change event** → **lookup relationships** → **notify or run checks** on related files.
+No request/response or persistent data paths yet. Current “flow” is: **export function → unit test asserts string**. Cross-package imports are not yet used in implementation code; `tsconfig.base.json` path aliases are ready for `@filelinks/core` and `@filelinks/git-hook` from consumers.
 
-## Abstractions
+## Tooling boundaries
 
-- None in code. Future abstractions might include: **link graph**, **adapter per ecosystem** (optional), **plugin or hook contract**.
+- **Lint:** ESLint via Nx-inferred `lint` targets (`eslint .` in each package `cwd`), using root `eslint.config.mjs` plus package-level `packages/*/eslint.config.mjs`.
+- **Test:** Vitest via Nx-inferred `test` / `test-ci` (see `TESTING.md`).
 
-## Entry points (current)
+## Entry points (future)
 
-- **Documentation only:** `README.md` describes scope; `LICENSE` governs distribution.
-- **No runtime entry point** (no `package.json` `bin`, no `main` in any language).
-
-## Summary
-
-The repository is **pre-architecture**: vision is documented, implementation is not. After the first manifest and source layout land, rewrite this document with actual modules, boundaries, and a short diagram if helpful.
+- A future **CLI binary** would typically be wired through `packages/cli` (bin field / Nx executor not present yet).
+- **Git hooks** would consume `@filelinks/git-hook` from install or hook scripts (not configured in-repo yet).

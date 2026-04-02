@@ -1,42 +1,24 @@
 # External integrations
 
-**Snapshot:** No application code or configuration files reference external services, databases, or APIs. This document records the **current** state; update when manifests or integration code appear.
+## Package registry and publishing
 
-## APIs and HTTP clients
+- **npm (public registry)** — default upstream for dependencies via pnpm; lockfile at `pnpm-lock.yaml`.
+- **Verdaccio** — local registry for development/publish testing. Configuration: `.verdaccio/config.yml` (storage under `tmp/local-registry/storage`, uplink to `https://registry.npmjs.org`, open `access`/`publish` for local use). Started via Nx: root `project.json` target `local-registry` (`@nx/js:verdaccio`, port `4873`).
 
-- **None.** No `fetch` wrappers, OpenAPI specs, or HTTP client configuration in the repository.
+## Nx Cloud
 
-## Databases and persistence
+- **`nx.json`** includes `nxCloudId` and `analytics: false` — workspace may connect to Nx Cloud for distributed caching; no application runtime dependency on external APIs from source code.
 
-- **None.** No ORM config, migration folders, connection strings, or schema files (e.g. no `prisma/`, `migrations/`, `docker-compose.yml` for databases).
+## Application-level services
 
-## Authentication and identity
+The packages under `packages/` are thin stubs (`core()`, `cli()`, `gitHook()` returning fixed strings). There are **no** embedded SDKs, HTTP clients, databases, OAuth providers, or webhook handlers in the current source tree.
 
-- **None.** No OAuth, JWT, or session middleware; no auth provider SDKs.
+## Future integration points
 
-## Webhooks and callbacks
+When the product grows, typical touchpoints will be:
 
-- **None.** No webhook registration or signature verification code.
+- **`packages/cli/`** — CLI entry and any future network or filesystem integrations.
+- **`packages/git-hook/`** — Git hooks and SCM-related behavior.
+- **`packages/core/`** — shared domain logic and types used by CLI and hooks.
 
-## CI/CD and hosting
-
-- **None observed in-repo.** No `.github/workflows/`, GitLab CI, or platform-specific deploy configs at the repository root.
-
-## Package registries and tooling
-
-- **Not applicable yet.** No `package.json`, so no npm registry scope or private feed configuration.
-
-## Secrets and environment
-
-- `.gitignore` excludes `.env` and `.env.*` (with `!.env.example` allowed). No `.env.example` is present yet; when added, document required variables here.
-
-## Summary
-
-| Integration type | Status |
-|------------------|--------|
-| Third-party APIs | Not integrated |
-| Databases | Not integrated |
-| Auth providers | Not integrated |
-| Webhooks | Not integrated |
-
-Revisit this file when the first dependency or integration is introduced (e.g. after adding `package.json` or equivalent and any service clients).
+Document new third-party services here as they are added (with env var names and config file paths, not secrets).
