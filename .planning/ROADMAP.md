@@ -12,7 +12,7 @@
 
 ---
 
-## Phase 1 — Core library
+## Phase 1: Core library
 
 **Goal:** `@filelinks/core` implements declarative link definitions, discovers config from the repo, reads staged paths from git, and computes “trigger fired + missing affected files” for downstream CLI.
 
@@ -29,7 +29,7 @@
 
 ---
 
-## Phase 2 — CLI MVP
+## Phase 2: CLI MVP
 
 **Goal:** `filelinks` CLI exposes `check`, `list`, and `add`; suitable for publishing and demo via `npx filelinks` once published.
 
