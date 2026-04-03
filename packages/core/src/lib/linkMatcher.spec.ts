@@ -8,7 +8,9 @@ describe('matchStagedLinks', () => {
     const links: FileLinkEntry[] = [
       {
         trigger: 'apps/**/*.ts',
-        affects: [{ file: 'docs/openapi.yaml', reason: 'Keep OpenAPI in sync' }],
+        affects: [
+          { file: 'docs/openapi.yaml', reason: 'Keep OpenAPI in sync' },
+        ],
       },
     ];
     const staged = ['apps/api/foo.ts'];
@@ -23,5 +25,18 @@ describe('matchStagedLinks', () => {
       { trigger: 'apps/**/*.ts', affects: [{ file: 'x', reason: 'y' }] },
     ];
     expect(matchStagedLinks(['other/file.ts'], links)).toHaveLength(0);
+  });
+
+  it('returns entry with linkType when provided', () => {
+    const links: FileLinkEntry[] = [
+      {
+        trigger: 'apps/**/*.ts',
+        linkType: 'dir-file',
+        affects: [{ file: 'docs/readme.md', reason: 'sync' }],
+      },
+    ];
+    const r = matchStagedLinks(['apps/api/foo.ts'], links);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.entry.linkType).toBe('dir-file');
   });
 });

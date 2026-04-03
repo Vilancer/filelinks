@@ -1,6 +1,7 @@
 /**
  * `trigger` and `affects[].file` patterns are **repository-root-relative**, matching
  * paths from `git diff` / `getStagedFilePaths` (POSIX-style segments).
+ * Optional `entry.linkType` is metadata for tooling; it does not change minimatch behavior here.
  */
 import { minimatch } from 'minimatch';
 
@@ -13,7 +14,7 @@ export interface StagedLinkMatch {
 
 export function matchStagedLinks(
   stagedPaths: string[],
-  links: FileLinkEntry[]
+  links: FileLinkEntry[],
 ): StagedLinkMatch[] {
   const results: StagedLinkMatch[] = [];
 
