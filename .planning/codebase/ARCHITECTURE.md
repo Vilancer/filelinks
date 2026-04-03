@@ -6,11 +6,11 @@
 
 ## Packages and roles
 
-| Package | Name (npm) | Role |
-|---------|------------|------|
-| `packages/core` | `@filelinks/core` | Shared core library — intended for shared logic. |
-| `packages/cli` | `filelinks` | CLI-facing package (name `filelinks` in `packages/cli/package.json`). |
-| `packages/git-hook` | `@filelinks/git-hook` | Git hook–related library. |
+| Package             | Name (npm)            | Role                                                                  |
+| ------------------- | --------------------- | --------------------------------------------------------------------- |
+| `packages/core`     | `@filelinks/core`     | Shared core library — intended for shared logic.                      |
+| `packages/cli`      | `filelinks`           | CLI-facing package (name `filelinks` in `packages/cli/package.json`). |
+| `packages/git-hook` | `@filelinks/git-hook` | Git hook–related library.                                             |
 
 Source entry points re-export lib modules:
 
@@ -25,7 +25,9 @@ Source entry points re-export lib modules:
 
 ## Data flow
 
-No request/response or persistent data paths yet. Current “flow” is: **export function → unit test asserts string**. Cross-package imports are not yet used in implementation code; `tsconfig.base.json` path aliases are ready for `@filelinks/core` and `@filelinks/git-hook` from consumers.
+**Config → matcher:** Consumers load `filelinks.config.ts` (via **`jiti`** in `configLoader`) to obtain `{ links, config }`. Each `FileLinkEntry` may include optional **`linkType`** (`file-file` \| `dir-dir` \| `file-dir` \| `dir-file`) describing whether the relationship is file- vs directory-oriented; **matching still uses `minimatch`** on repo-root-relative paths from git—`linkType` is declarative metadata for CLI/list and future validation. `matchStagedLinks(stagedPaths, links)` returns fired entries and missing affected paths.
+
+Cross-package: `tsconfig.base.json` path aliases wire `@filelinks/core` (and future `filelinks` CLI) together.
 
 ## Tooling boundaries
 

@@ -4,13 +4,26 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "CI=true NX_CLOUD=false pnpm exec nx run-many -t test --parallel=3 --exclude=filelinks",
+    "test:ci": "pnpm exec nx run-many -t test-ci --parallel=3 --exclude=filelinks",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,html}": [
+      "prettier --write"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^9.8.0",
     "@nx/esbuild": "22.6.4",
     "@nx/eslint": "22.6.4",
@@ -28,7 +41,9 @@
     "esbuild": "^0.19.2",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
+    "husky": "^9.1.7",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^15.5.2",
     "nx": "22.6.4",
     "prettier": "~3.6.2",
     "tslib": "^2.3.0",
@@ -38,6 +53,5 @@
     "vite": "^8.0.0",
     "vitest": "~4.1.0"
   },
-  "nx": {},
-  "dependencies": {}
+  "nx": {}
 }

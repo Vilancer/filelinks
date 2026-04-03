@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { defineLinks } from './schema';
 
 describe('defineLinks', () => {
@@ -11,5 +13,16 @@ describe('defineLinks', () => {
     const { config } = defineLinks([], {});
     expect(config).toEqual({});
     expect(Object.keys(config)).toHaveLength(0);
+  });
+
+  it('preserves optional linkType on entries', () => {
+    const { links } = defineLinks([
+      {
+        trigger: 'src/**/*.ts',
+        linkType: 'file-file',
+        affects: [{ file: 'README.md', reason: 'Docs' }],
+      },
+    ]);
+    expect(links[0]?.linkType).toBe('file-file');
   });
 });

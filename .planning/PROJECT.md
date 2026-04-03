@@ -2,7 +2,7 @@
 
 ## What This Is
 
-**filelinks** is an open-source developer tool for declaring semantic relationships between files in a repo—any language, any file type. When a *trigger* file changes, the tool knows which *affected* files should be reviewed or updated, and can warn in CI or git workflows when those companions were not touched. The vision includes AI-assisted suggestions for updates; the **first shippable milestone** is a **core library plus CLI** you can demo with a single `npx` command (`docs/filelinks-docs.docx`).
+**filelinks** is an open-source developer tool for declaring semantic relationships between files in a repo—any language, any file type. When a _trigger_ file changes, the tool knows which _affected_ files should be reviewed or updated, and can warn in CI or git workflows when those companions were not touched. The vision includes AI-assisted suggestions for updates; the **first shippable milestone** is a **core library plus CLI** you can demo with a single `npx` command (`docs/filelinks-docs.docx`).
 
 ## Core Value
 
@@ -17,15 +17,17 @@ When someone changes a file, they get a reliable signal about which related file
 - ✓ **MVP: declarative config (Phase 1)** — `PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `defineLinks(links, config?)` → `{ links, config }`; **`jiti`** loads `filelinks.config.ts` (walk up tree); `resolvePrompt` for global vs per-link prompt merge.
 - ✓ **MVP: git integration (Phase 1)** — staged paths via `git diff -z --name-only --cached`; repo root via `git rev-parse --show-toplevel` (`packages/core/src/lib/gitReader.ts`).
 - ✓ **MVP: link matching (Phase 1)** — `matchStagedLinks` with `minimatch` on repo-root-relative patterns (`packages/core/src/lib/linkMatcher.ts`).
+- ✓ **MVP: link relationship metadata (Phase 2)** — optional `linkType` on `FileLinkEntry` (`packages/core/src/lib/schema.ts`, `linkType.ts`).
+- ✓ **MVP: contributor + agent docs & hooks (Phase 2)** — `CONTRIBUTING.md`, `AGENTS.md`, `.cursor/rules/filelinks-architecture.mdc`, Husky + **lint-staged** in root `package.json` and `.husky/pre-commit` (run `pnpm install` to fetch `husky`).
 
 ### Active
 
-- [ ] **MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
+- [ ] **Phase 3 — MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
 - [ ] **MVP: demo story** — README with install, minimal `filelinks.config.ts` example, `npx filelinks` usage; packages publishable to npm.
 
 ### Out of Scope
 
-- **`@filelinks/git-hook`** — pre-commit wrapper and husky/lint-staged docs; package directory may exist but not part of MVP delivery.
+- **`@filelinks/git-hook`** — product hook wrapper package; not part of MVP delivery (root **Husky** is for repo quality only).
 - **VS Code extension** — gutter, webview graph; later milestone.
 - **`filelinks suggest` (AI)** — diff + affected file → model suggestions; follow doc roadmap after MVP; requires provider keys and design.
 - **`filelinks graph`** — ASCII/HTML/DOT output; later milestone.
@@ -35,7 +37,7 @@ When someone changes a file, they get a reliable signal about which related file
 
 - Product specification: `docs/filelinks-docs.docx` (config shape, CLI commands, phased roadmap).
 - Codebase map: `.planning/codebase/` (stack, structure, conventions).
-- **`@filelinks/core`** implements Phase 1 schema, config load, git reader, matcher, and `resolvePrompt` (see `01-VERIFICATION.md`). CLI packages remain scaffold until Phase 2.
+- **`@filelinks/core`** implements Phase 1 schema, config load, git reader, matcher, `resolvePrompt`, and Phase 2 **`linkType`** (see `01-VERIFICATION.md`). The **`filelinks`** CLI package remains scaffold until Phase 3.
 
 ## Constraints
 
@@ -44,11 +46,11 @@ When someone changes a file, they get a reliable signal about which related file
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| MVP = core + CLI only | User direction + doc “Where to start”; single demo surface. | Core library complete (Phase 1); CLI next |
-| Defer AI `suggest` until after MVP | Doc places AI in a later phase; MVP proves matching + CLI. | — Pending |
-| Cross-file links are declarative, not import-graph | Doc positioning vs linters; intent-driven. | — Pending |
+| Decision                                           | Rationale                                                   | Outcome                                   |
+| -------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| MVP = core + CLI only                              | User direction + doc “Where to start”; single demo surface. | Core library complete (Phase 1); CLI next |
+| Defer AI `suggest` until after MVP                 | Doc places AI in a later phase; MVP proves matching + CLI.  | — Pending                                 |
+| Cross-file links are declarative, not import-graph | Doc positioning vs linters; intent-driven.                  | — Pending                                 |
 
 ## Evolution
 
@@ -70,4 +72,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — Phase 1 core library executed (schema, jiti loader, git reader, matcher)*
+
+_Last updated: 2026-04-02 — Phase 1 core library executed (schema, jiti loader, git reader, matcher)_
