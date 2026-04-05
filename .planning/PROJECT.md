@@ -22,7 +22,8 @@ When someone changes a file, they get a reliable signal about which related file
 
 ### Active
 
-- [ ] **Phase 3 — MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
+- [ ] **Phase 3 — Core: Effect Schema + typed errors** — Effect (`effect`) with Schema for config types; error hierarchy + centralized handler; structured error output.
+- [ ] **Phase 4 — MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
 - [ ] **MVP: demo story** — README with install, minimal `filelinks.config.ts` example, `npx filelinks` usage; packages publishable to npm.
 
 ### Out of Scope

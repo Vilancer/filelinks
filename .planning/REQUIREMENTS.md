@@ -17,6 +17,9 @@ Aligned with the doc **Step 2 — Define the config schema (core)** and **Step 3
 - [x] **CORE-04**: Link matcher takes staged paths + loaded `links`; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
 - [x] **CORE-05**: `packages/core/src/promptResolver.ts` exports `resolvePrompt(globalConfig, link)` merging `PromptConfig` with **object spread** (global first, link overrides) for any key defined on either side—used by future `suggest`; no AI calls in Phase 1.
 - [x] **CORE-06**: `LinkType` (`file-file` \| `dir-dir` \| `file-dir` \| `dir-file`) and optional `linkType` on `FileLinkEntry`; exported helpers/descriptions; matcher behavior unchanged (minimatch); tests updated.
+- [ ] **CORE-07**: `@filelinks/core` adopts **[Effect](https://effect.website/)** — config shapes defined with **Effect Schema** (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`, `LinkType`); public API exports **both** Schema values and inferred TypeScript types (e.g. `Schema.Type<typeof SchemaName>`), replacing plain hand-written interfaces as the source of truth.
+- [ ] **CORE-08**: **Typed error hierarchy** — a base error class with shared fields (e.g. code, message context); concrete subclasses for specific failure kinds with **preset defaults** where appropriate; used from config load / validation and other core boundaries.
+- [ ] **CORE-09**: **Centralized error handler** — one function accepting `unknown`; uses `instanceof` (or equivalent narrowing) to dispatch; **graceful fallback** for unexpected errors; returns a **single consistent structured error output** shape for downstream callers.
 
 ### CLI
 
@@ -64,28 +67,31 @@ Deferred; tracked for roadmap after MVP.
 
 ## Traceability
 
-| Requirement | Phase                               | Status   |
-| ----------- | ----------------------------------- | -------- |
-| CORE-01     | Phase 1 — Core library              | Complete |
-| CORE-02     | Phase 1 — Core library              | Complete |
-| CORE-03     | Phase 1 — Core library              | Complete |
-| CORE-04     | Phase 1 — Core library              | Complete |
-| CORE-05     | Phase 1 — Core library              | Complete |
-| CORE-06     | Phase 2 — Core link types & repo DX | Complete |
-| DOC-02      | Phase 2 — Core link types & repo DX | Complete |
-| CLI-01      | Phase 3 — CLI MVP                   | Pending  |
-| CLI-02      | Phase 3 — CLI MVP                   | Pending  |
-| CLI-03      | Phase 3 — CLI MVP                   | Pending  |
-| CLI-04      | Phase 3 — CLI MVP                   | Pending  |
-| DOC-01      | Phase 3 — CLI MVP                   | Pending  |
+| Requirement | Phase                                  | Status   |
+| ----------- | -------------------------------------- | -------- |
+| CORE-01     | Phase 1 — Core library                 | Complete |
+| CORE-02     | Phase 1 — Core library                 | Complete |
+| CORE-03     | Phase 1 — Core library                 | Complete |
+| CORE-04     | Phase 1 — Core library                 | Complete |
+| CORE-05     | Phase 1 — Core library                 | Complete |
+| CORE-06     | Phase 2 — Core link types & repo DX    | Complete |
+| DOC-02      | Phase 2 — Core link types & repo DX    | Complete |
+| CORE-07     | Phase 3 — Core — Effect & typed errors | Pending  |
+| CORE-08     | Phase 3 — Core — Effect & typed errors | Pending  |
+| CORE-09     | Phase 3 — Core — Effect & typed errors | Pending  |
+| CLI-01      | Phase 4 — CLI MVP                      | Pending  |
+| CLI-02      | Phase 4 — CLI MVP                      | Pending  |
+| CLI-03      | Phase 4 — CLI MVP                      | Pending  |
+| CLI-04      | Phase 4 — CLI MVP                      | Pending  |
+| DOC-01      | Phase 4 — CLI MVP                      | Pending  |
 
 **Coverage:**
 
-- v1 requirements: 12 total
-- Mapped to phases: 12
+- v1 requirements: 15 total
+- Mapped to phases: 15
 - Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-04-02_  
-_Last updated: 2026-04-03 — Phase 2 link types + DOC-02; CLI → Phase 3_
+_Last updated: 2026-04-05 — CORE-07–09 → Phase 3 (Effect + errors); CLI → Phase 4_

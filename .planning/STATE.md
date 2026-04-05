@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 2 verified — next Phase 3 CLI MVP
-last_updated: '2026-04-03T20:05:00.000Z'
-last_activity: 2026-04-03
+stopped_at: Phase 3 context gathered
+last_updated: '2026-04-05T06:53:04.110Z'
+last_activity: 2026-04-05
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 2
   total_plans: 3
   completed_plans: 2
-  percent: 67
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 **Core value:** When someone changes a file, they get a reliable signal about which related files must stay in sync—without relying on same-language import graphs alone.  
-**Current focus:** Phase 03 — CLI MVP
+**Current focus:** Phase 03 — Core — Effect & typed errors
 
 ## Current Position
 
 Phase: 3
 Plan: Not started
 Status: Ready to plan / execute
-Last activity: 2026-04-03
+Last activity: 2026-04-05
 
-Progress: [██████░░░░] 67%
+Progress: [████░░░░░░] 50%
 
 ## Performance Metrics
 
@@ -52,6 +52,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03
-Stopped at: Phase 2 verification recorded; Phase 3 CLI next
-Resume file: `.planning/phases/02-core-link-types-repo-dx/02-01-PLAN.md`
+Last session: 2026-04-05T06:53:04.106Z
+Stopped at: Phase 3 context gathered
+Resume file: .planning/phases/03-core-effect-typed-errors/03-CONTEXT.md

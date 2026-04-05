@@ -5,11 +5,12 @@
 
 ## Overview
 
-| Phase | Name                      | Goal                                                                              | Requirements            |
-| ----- | ------------------------- | --------------------------------------------------------------------------------- | ----------------------- |
-| 1     | Core library              | Complete                                                                          | CORE-01 — CORE-05       |
-| 2     | Core link types & repo DX | `linkType` on links; architecture/command docs; Husky + lint-staged; Cursor rules | CORE-06, DOC-02         |
-| 3     | CLI MVP                   | Commander commands + bin + README for `npx` demo                                  | CLI-01 — CLI-04, DOC-01 |
+| Phase | Name                         | Goal                                                                                 | Requirements            |
+| ----- | ---------------------------- | ------------------------------------------------------------------------------------ | ----------------------- |
+| 1     | Core library                 | Complete                                                                             | CORE-01 — CORE-05       |
+| 2     | Core link types & repo DX    | `linkType` on links; architecture/command docs; Husky + lint-staged; Cursor rules    | CORE-06, DOC-02         |
+| 3     | Core — Effect & typed errors | Effect **Schema** for core config types; typed error hierarchy + centralized handler | CORE-07 — CORE-09       |
+| 4     | CLI MVP                      | Commander commands + bin + README for `npx` demo                                     | CLI-01 — CLI-04, DOC-01 |
 
 ---
 
@@ -55,7 +56,25 @@
 
 ---
 
-## Phase 3: CLI MVP
+## Phase 3: Core — Effect & typed errors
+
+**Goal:** Evolve `@filelinks/core` to use **[Effect](https://effect.website/)** — in particular **@effect/schema** (or `effect/Schema`) — so public config shapes are defined as **Schema** values with **exported Schema + inferred types** (not hand-written interfaces alone). Introduce a **typed error hierarchy** (base class with shared fields; subclasses per failure kind with sensible defaults) and a **single centralized error handler** that inspects errors (`instanceof`), handles known cases, and **falls back gracefully** for unknown failures while returning a **consistent structured error representation** for callers (CLI in Phase 4 will consume this surface).
+
+**Requirements:** CORE-07, CORE-08, CORE-09
+
+**Success criteria:**
+
+1. Core config types (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`, `LinkType`) are backed by Effect Schema; the package exports both the Schema definitions and the TypeScript types derived from them.
+2. Config loading / validation paths use the Schema-aligned types; existing matcher and `linkType` semantics stay backward compatible for configs without `linkType`.
+3. Domain errors are modeled as subclasses of a shared base error type; each subclass encodes a specific failure with preset defaults where appropriate.
+4. One public (or package-internal) **handler** function accepts `unknown`, narrows with `instanceof`, maps known errors to the structured output shape, and does not throw on unexpected input (safe fallback + message / code).
+5. `nx build core` and `nx test core` pass; no CLI binary work in this phase.
+
+**UI hint:** no
+
+---
+
+## Phase 4: CLI MVP
 
 **Goal:** `filelinks` CLI exposes `check`, `list`, and `add`; suitable for publishing and demo via `npx filelinks` once published.
 
@@ -80,4 +99,4 @@ Order follows `docs/filelinks-docs.docx`: git-hook → AI suggest → graph → 
 ---
 
 _Roadmap created: 2026-04-02_  
-_Last updated: 2026-04-03 — Phase 2 = link types + DX; CLI MVP → Phase 3_
+_Last updated: 2026-04-05 — Phase 3 = Effect + typed errors; CLI MVP → Phase 4_
