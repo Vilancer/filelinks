@@ -1,33 +1,59 @@
-export interface PromptConfig {
-  systemPrompt?: string;
-  temperature?: number;
-  maxTokens?: number;
-}
+import * as Schema from 'effect/Schema';
 
-export interface FileLinkConfig {
-  prompt?: PromptConfig;
-}
+export const LinkTypeSchema = Schema.Literal(
+  'file-file',
+  'dir-dir',
+  'file-dir',
+  'dir-file',
+);
 
-/** Declares how trigger paths relate to affected paths (file vs directory semantics). */
-export type LinkType = 'file-file' | 'dir-dir' | 'file-dir' | 'dir-file';
+export const PromptConfigSchema = Schema.Struct({
+  systemPrompt: Schema.optional(Schema.String),
+  temperature: Schema.optional(Schema.Number),
+  maxTokens: Schema.optional(Schema.Number),
+});
 
-export interface FileLinkEntry {
-  trigger: string;
-  affects: AffectedFile[];
-  /** Optional; when set, documents intent for CLI/list and future validation. Matching still uses minimatch on repo-relative paths. */
-  linkType?: LinkType;
-  severity?: 'warn' | 'error';
-  prompt?: PromptConfig;
-}
+export const AffectedFileSchema = Schema.Struct({
+  file: Schema.String,
+  reason: Schema.String,
+});
 
-export interface AffectedFile {
-  file: string;
-  reason: string;
-}
+const SeveritySchema = Schema.Literal('warn', 'error');
+
+export const FileLinkEntrySchema = Schema.Struct({
+  trigger: Schema.String,
+  affects: Schema.Array(AffectedFileSchema),
+  linkType: Schema.optional(LinkTypeSchema),
+  severity: Schema.optional(SeveritySchema),
+  prompt: Schema.optional(PromptConfigSchema),
+});
+
+export const FileLinkConfigSchema = Schema.Struct({
+  prompt: Schema.optional(PromptConfigSchema),
+});
+
+export const FileLinksFileSchema = Schema.Struct({
+  links: Schema.Array(FileLinkEntrySchema),
+  config: FileLinkConfigSchema,
+});
+
+export type PromptConfig = Schema.Schema.Type<typeof PromptConfigSchema>;
+export type FileLinkConfig = Schema.Schema.Type<typeof FileLinkConfigSchema>;
+export type AffectedFile = Schema.Schema.Type<typeof AffectedFileSchema>;
+export type LinkType = Schema.Schema.Type<typeof LinkTypeSchema>;
+export type FileLinkEntry = Schema.Schema.Type<typeof FileLinkEntrySchema>;
+
+const decodeLinks = Schema.decodeUnknownSync(Schema.Array(FileLinkEntrySchema));
+const decodeConfig = Schema.decodeUnknownSync(FileLinkConfigSchema);
 
 export function defineLinks(
-  links: FileLinkEntry[],
-  config?: FileLinkConfig,
+  links: unknown,
+  config?: unknown,
 ): { links: FileLinkEntry[]; config: FileLinkConfig } {
-  return { links, config: config ?? {} };
+  const decodedLinks = decodeLinks(links);
+  const decodedConfig = decodeConfig(config ?? {});
+  return {
+    links: [...decodedLinks],
+    config: { ...decodedConfig },
+  };
 }

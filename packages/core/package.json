@@ -5,6 +5,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
+    "effect": "^3.21.0",
     "jiti": "^2.4.2",
     "minimatch": "^10.0.1",
     "tslib": "^2.3.0"

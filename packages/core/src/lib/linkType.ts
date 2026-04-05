@@ -1,4 +1,9 @@
+import * as Schema from 'effect/Schema';
+
 import type { LinkType } from './schema';
+import { LinkTypeSchema } from './schema';
+
+const isLinkTypeDecoded = Schema.is(LinkTypeSchema);
 
 export const LINK_TYPES: readonly LinkType[] = [
   'file-file',
@@ -17,8 +22,5 @@ export const LINK_TYPE_DESCRIPTIONS: Record<LinkType, string> = {
 };
 
 export function isLinkType(value: unknown): value is LinkType {
-  return (
-    typeof value === 'string' &&
-    (LINK_TYPES as readonly string[]).includes(value)
-  );
+  return isLinkTypeDecoded(value);
 }
