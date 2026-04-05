@@ -17,9 +17,9 @@ Aligned with the doc **Step 2 — Define the config schema (core)** and **Step 3
 - [x] **CORE-04**: Link matcher takes staged paths + loaded `links`; uses glob matching (`minimatch`); returns which trigger fired and which affected files are missing from the staged set.
 - [x] **CORE-05**: `packages/core/src/promptResolver.ts` exports `resolvePrompt(globalConfig, link)` merging `PromptConfig` with **object spread** (global first, link overrides) for any key defined on either side—used by future `suggest`; no AI calls in Phase 1.
 - [x] **CORE-06**: `LinkType` (`file-file` \| `dir-dir` \| `file-dir` \| `dir-file`) and optional `linkType` on `FileLinkEntry`; exported helpers/descriptions; matcher behavior unchanged (minimatch); tests updated.
-- [ ] **CORE-07**: `@filelinks/core` adopts **[Effect](https://effect.website/)** — config shapes defined with **Effect Schema** (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`, `LinkType`); public API exports **both** Schema values and inferred TypeScript types (e.g. `Schema.Type<typeof SchemaName>`), replacing plain hand-written interfaces as the source of truth.
-- [ ] **CORE-08**: **Typed error hierarchy** — a base error class with shared fields (e.g. code, message context); concrete subclasses for specific failure kinds with **preset defaults** where appropriate; used from config load / validation and other core boundaries.
-- [ ] **CORE-09**: **Centralized error handler** — one function accepting `unknown`; uses `instanceof` (or equivalent narrowing) to dispatch; **graceful fallback** for unexpected errors; returns a **single consistent structured error output** shape for downstream callers.
+- [x] **CORE-07**: `@filelinks/core` adopts **[Effect](https://effect.website/)** — config shapes defined with **Effect Schema** (`PromptConfig`, `FileLinkConfig`, `FileLinkEntry`, `AffectedFile`, `LinkType`); public API exports **both** Schema values and inferred TypeScript types (e.g. `Schema.Type<typeof SchemaName>`), replacing plain hand-written interfaces as the source of truth.
+- [x] **CORE-08**: **Typed error hierarchy** — a base error class with shared fields (e.g. code, message context); concrete subclasses for specific failure kinds with **preset defaults** where appropriate; used from config load / validation and other core boundaries.
+- [x] **CORE-09**: **Centralized error handler** — one function accepting `unknown`; uses `instanceof` (or equivalent narrowing) to dispatch; **graceful fallback** for unexpected errors; returns a **single consistent structured error output** shape for downstream callers.
 
 ### CLI
 
@@ -76,9 +76,9 @@ Deferred; tracked for roadmap after MVP.
 | CORE-05     | Phase 1 — Core library                 | Complete |
 | CORE-06     | Phase 2 — Core link types & repo DX    | Complete |
 | DOC-02      | Phase 2 — Core link types & repo DX    | Complete |
-| CORE-07     | Phase 3 — Core — Effect & typed errors | Pending  |
-| CORE-08     | Phase 3 — Core — Effect & typed errors | Pending  |
-| CORE-09     | Phase 3 — Core — Effect & typed errors | Pending  |
+| CORE-07     | Phase 3 — Core — Effect & typed errors | Complete |
+| CORE-08     | Phase 3 — Core — Effect & typed errors | Complete |
+| CORE-09     | Phase 3 — Core — Effect & typed errors | Complete |
 | CLI-01      | Phase 4 — CLI MVP                      | Pending  |
 | CLI-02      | Phase 4 — CLI MVP                      | Pending  |
 | CLI-03      | Phase 4 — CLI MVP                      | Pending  |

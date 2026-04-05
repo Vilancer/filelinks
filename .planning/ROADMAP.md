@@ -5,12 +5,12 @@
 
 ## Overview
 
-| Phase | Name                         | Goal                                                                                 | Requirements            |
-| ----- | ---------------------------- | ------------------------------------------------------------------------------------ | ----------------------- |
-| 1     | Core library                 | Complete                                                                             | CORE-01 — CORE-05       |
-| 2     | Core link types & repo DX    | `linkType` on links; architecture/command docs; Husky + lint-staged; Cursor rules    | CORE-06, DOC-02         |
-| 3     | Core — Effect & typed errors | Effect **Schema** for core config types; typed error hierarchy + centralized handler | CORE-07 — CORE-09       |
-| 4     | CLI MVP                      | Commander commands + bin + README for `npx` demo                                     | CLI-01 — CLI-04, DOC-01 |
+| Phase | Name                         | Goal                                                                              | Requirements            |
+| ----- | ---------------------------- | --------------------------------------------------------------------------------- | ----------------------- |
+| 1     | Core library                 | Complete                                                                          | CORE-01 — CORE-05       |
+| 2     | Core link types & repo DX    | `linkType` on links; architecture/command docs; Husky + lint-staged; Cursor rules | CORE-06, DOC-02         |
+| 3     | Core — Effect & typed errors | Complete                                                                          | 2026-04-05              |
+| 4     | CLI MVP                      | Commander commands + bin + README for `npx` demo                                  | CLI-01 — CLI-04, DOC-01 |
 
 ---
 

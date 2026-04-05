@@ -19,10 +19,10 @@ When someone changes a file, they get a reliable signal about which related file
 - ✓ **MVP: link matching (Phase 1)** — `matchStagedLinks` with `minimatch` on repo-root-relative patterns (`packages/core/src/lib/linkMatcher.ts`).
 - ✓ **MVP: link relationship metadata (Phase 2)** — optional `linkType` on `FileLinkEntry` (`packages/core/src/lib/schema.ts`, `linkType.ts`).
 - ✓ **MVP: contributor + agent docs & hooks (Phase 2)** — `CONTRIBUTING.md`, `AGENTS.md`, `.cursor/rules/filelinks-architecture.mdc`, Husky + **lint-staged** in root `package.json` and `.husky/pre-commit` (run `pnpm install` to fetch `husky`).
+- ✓ **Phase 3 — Effect Schema + typed errors** — `effect` + **Effect Schema** for config models; **`FilelinksError`** hierarchy; **`normalizeError`** structured output; see `03-VERIFICATION.md`.
 
 ### Active
 
-- [ ] **Phase 3 — Core: Effect Schema + typed errors** — Effect (`effect`) with Schema for config types; error hierarchy + centralized handler; structured error output.
 - [ ] **Phase 4 — MVP: CLI** — `filelinks check`, `list`, `add` (Commander); non-zero exit when `severity: 'error'` and companions missing.
 - [ ] **MVP: demo story** — README with install, minimal `filelinks.config.ts` example, `npx filelinks` usage; packages publishable to npm.
 

@@ -1,6 +1,7 @@
+import * as Schema from 'effect/Schema';
 import { describe, expect, it } from 'vitest';
 
-import { defineLinks } from './schema';
+import { defineLinks, FileLinkEntrySchema } from './schema';
 
 describe('defineLinks', () => {
   it('normalizes omitted config to empty object', () => {
@@ -24,5 +25,14 @@ describe('defineLinks', () => {
       },
     ]);
     expect(links[0]?.linkType).toBe('file-file');
+  });
+
+  it('rejects invalid link entries at decode', () => {
+    expect(() =>
+      Schema.decodeUnknownSync(FileLinkEntrySchema)({
+        trigger: 1,
+        affects: [],
+      }),
+    ).toThrow();
   });
 });

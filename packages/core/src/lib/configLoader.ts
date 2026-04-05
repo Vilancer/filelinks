@@ -1,13 +1,23 @@
 import { createJiti } from 'jiti';
+import * as Schema from 'effect/Schema';
+import { isParseError } from 'effect/ParseResult';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import {
+  ConfigExportShapeError,
+  ConfigNotFoundError,
+  ConfigValidationError,
+} from './errors';
 import type { FileLinkConfig, FileLinkEntry } from './schema';
+import { FileLinksFileSchema } from './schema';
 
 export type LoadedFileLinksConfig = {
   links: FileLinkEntry[];
   config: FileLinkConfig;
 };
+
+const decodeFileLinksFile = Schema.decodeUnknownSync(FileLinksFileSchema);
 
 export function findConfigFile(startDir: string): string | null {
   let dir = path.resolve(startDir);
@@ -30,8 +40,8 @@ export function findConfigFile(startDir: string): string | null {
 export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
   const file = findConfigFile(startDir);
   if (!file) {
-    throw new Error(
-      `filelinks.config.ts not found when searching upward from ${path.resolve(startDir)}`
+    throw new ConfigNotFoundError(
+      `filelinks.config.ts not found when searching upward from ${path.resolve(startDir)}`,
     );
   }
 
@@ -40,8 +50,8 @@ export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
   const exported = loaded.default;
 
   if (!exported || typeof exported !== 'object' || Array.isArray(exported)) {
-    throw new Error(
-      `filelinks.config.ts must default-export a non-array object (got ${typeof exported})`
+    throw new ConfigExportShapeError(
+      `filelinks.config.ts must default-export a non-array object (got ${typeof exported})`,
     );
   }
 
@@ -49,14 +59,29 @@ export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
   const linksRaw = value['links'];
   const configRaw = value['config'];
   if (!Array.isArray(linksRaw)) {
-    throw new Error(`filelinks.config.ts default export must include a links array`);
+    throw new ConfigExportShapeError(
+      'filelinks.config.ts default export must include a links array',
+    );
   }
   if (!configRaw || typeof configRaw !== 'object' || Array.isArray(configRaw)) {
-    throw new Error(`filelinks.config.ts default export must include a config object`);
+    throw new ConfigExportShapeError(
+      'filelinks.config.ts default export must include a config object',
+    );
   }
 
-  return {
-    links: linksRaw as FileLinkEntry[],
-    config: configRaw as FileLinkConfig,
-  };
+  try {
+    const decoded = decodeFileLinksFile(exported);
+    return {
+      links: [...decoded.links],
+      config: { ...decoded.config },
+    };
+  } catch (e: unknown) {
+    if (isParseError(e)) {
+      throw new ConfigValidationError(
+        'filelinks.config.ts failed schema validation',
+        { cause: e },
+      );
+    }
+    throw e;
+  }
 }

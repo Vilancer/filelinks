@@ -3,12 +3,20 @@ import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { ConfigValidationError } from './errors';
+import { normalizeError } from './handleError';
 import { findConfigFile, loadFileLinksConfig } from './configLoader';
 
 const fixtureDir = path.join(
   __dirname,
   '__fixtures__',
   'sample-filelinks-config',
+);
+
+const invalidSchemaFixtureDir = path.join(
+  __dirname,
+  '__fixtures__',
+  'invalid-schema-config',
 );
 
 describe('configLoader', () => {
@@ -29,5 +37,21 @@ describe('configLoader', () => {
     expect(links.length).toBe(1);
     expect(links[0]?.trigger).toBe('apps/**/*.ts');
     expect(config.prompt?.temperature).toBe(0.2);
+  });
+
+  it('loadFileLinksConfig throws ConfigValidationError when schema decode fails', () => {
+    expect(() => loadFileLinksConfig(invalidSchemaFixtureDir)).toThrow(
+      ConfigValidationError,
+    );
+  });
+
+  it('normalizeError maps ConfigValidationError from loader', () => {
+    try {
+      loadFileLinksConfig(invalidSchemaFixtureDir);
+    } catch (e) {
+      const h = normalizeError(e);
+      expect(h.ok).toBe(false);
+      expect(h.code).toBe('CONFIG_VALIDATION');
+    }
   });
 });
