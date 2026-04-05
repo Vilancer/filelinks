@@ -1,39 +1,52 @@
 # Testing
 
-**Snapshot:** No test files, test runners, or coverage configuration are present in the repository.
+## Framework
 
-## Test frameworks
+- **Vitest** `~4.1.0` with globals-style tests (`describe` / `it` / `expect`) — see `packages/core/src/lib/core.spec.ts` and siblings.
+- **Nx** `@nx/vitest` plugin infers test targets from the repo; no checked-in `vitest.config.ts` — Vitest runs with CLI defaults in each package directory.
 
-- **None.** No Jest, Vitest, Mocha, pytest, `go test` layout, or Cargo tests—no source tree at all.
+## How to run
 
-## Test directory layout
+From repository root (with dependencies installed):
 
-- **Not created.** Common future choices: `tests/`, `__tests__/`, `*.test.ts` colocated with source, or language-default layout once a stack is chosen.
+```bash
+pnpm exec nx run-many -t test
+```
 
-## Mocking and fixtures
+Per project:
 
-- **N/A** — no integration or unit tests.
+```bash
+pnpm exec nx test core
+pnpm exec nx test cli
+pnpm exec nx test git-hook
+```
 
-## Coverage
+**CI-oriented:** Nx exposes `test-ci` and per-file targets such as `test-ci--src/lib/core.spec.ts` (atomized CI runs). Inspect with:
 
-- `.gitignore` includes `coverage/`, `*.lcov`, `.nyc_output` — anticipates JS coverage tools when tests exist.
-- No coverage thresholds or CI gates configured.
+```bash
+pnpm exec nx show project core --json
+```
 
-## Continuous integration
+## Workspace
 
-- No `.github/workflows/` or other CI config observed at repository root for running tests on push/PR.
+- **`vitest.workspace.ts`** registers glob patterns so tooling can discover `**/vitest.config.*` when added later.
+- **Coverage:** `@vitest/coverage-v8` is available; Nx metadata references output under `coverage/packages/<project>/` for inferred test targets.
 
-## Local verification
+## Test layout
 
-- **Not applicable** until a build or test command exists. Future `README.md` should document: install deps, run tests, run lint.
+| Spec file | Exercises |
+|-----------|-----------|
+| `packages/core/src/lib/core.spec.ts` | `core()` from `packages/core/src/lib/core.ts` |
+| `packages/cli/src/lib/cli.spec.ts` | `cli()` from `packages/cli/src/lib/cli.ts` |
+| `packages/git-hook/src/lib/git-hook.spec.ts` | `gitHook()` from `packages/git-hook/src/lib/git-hook.ts` |
 
-## Summary
+Tests are minimal smoke tests (string equality).
 
-| Topic | Status |
-|-------|--------|
-| Unit tests | None |
-| Integration tests | None |
-| E2E / CLI tests | None |
-| CI | None |
+## TypeScript for tests
 
-Update this document when the first test runner is added and when CI runs tests automatically.
+- **`tsconfig.spec.json`** per package includes `vitest/globals`, `vitest/importMeta`, and `vitest` types.
+
+## Gaps
+
+- Root `package.json` `scripts.test` still prints an error — prefer documenting Nx commands in README or fixing the script to delegate to Nx.
+- No GitHub Actions (or other CI) config observed under `.github/` in this snapshot — wire `nx run-many -t test-ci` (or equivalent) when CI is added.

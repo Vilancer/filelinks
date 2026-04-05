@@ -1,45 +1,28 @@
-# Concerns, risks, and technical debt
+# Concerns and technical debt
 
-**Snapshot:** The repository is **greenfield**—risks are mostly **delivery and design** rather than legacy code.
+## Product maturity
 
-## Product and design uncertainty
+- **Placeholder implementations:** `packages/core/src/lib/core.ts`, `packages/cli/src/lib/cli.ts`, and `packages/git-hook/src/lib/git-hook.ts` only return fixed strings. There is no real file-linking, CLI UX, or git integration yet — risk of shipping scaffolding if version tags/releases run before features exist.
 
-- **Format not specified:** How file relationships are declared (single config, multiple files, syntax) will drive complexity and adoption.
-- **Consumer parity:** Supporting agents, git hooks, and editors may require multiple adapters or a stable core library—scope creep risk.
+## Workspace ergonomics
 
-## Security
+- **Root `package.json` test script:** Still `echo "Error: no test specified" && exit 1` — misleading for newcomers; should invoke Nx tests or be removed.
+- **Name overlap:** Root workspace name `filelinks` matches the CLI package name in `packages/cli/package.json`. Documentation and imports should disambiguate “monorepo root” vs “the `filelinks` npm package.”
 
-- **No attack surface in code** — nothing deployed or executed from this repo yet.
-- **Future:** Parsing user-supplied config or traversing repositories must avoid path traversal and arbitrary command execution; validate inputs and document threat model when a CLI exists.
+## CI and coverage
 
-## Operational
+- **No `.github/workflows`** (or similar) in tree — automated test/lint on PRs may be missing unless configured elsewhere.
+- **Coverage:** Tooling is present (`@vitest/coverage-v8`, Nx outputs) but no documented threshold or enforcement in-repo.
 
-- **No CI:** No automated checks for regressions, licenses, or supply chain when dependencies are added.
-- **No release process:** Versioning and publishing undefined.
+## Security and supply chain
+
+- **Dependencies:** Standard npm ecosystem; keep lockfile updated and audit for production-boundaries when CLI touches user repos or network.
+- **Verdaccio:** `.verdaccio/config.yml` allows open publish for local dev — appropriate for localhost only; do not expose that config on public networks without auth.
 
 ## Performance
 
-- **N/A** for empty codebase. Future graph resolution over large monorepos may need caching or incremental updates—track when benchmarks become relevant.
+- Not applicable at current scale (trivial synchronous functions). Revisit if the CLI scans large trees or hooks run on every keystroke.
 
-## Fragile areas
+## Observability
 
-- **None in code.** The only durable artifacts are `README.md`, `LICENSE`, and `.gitignore`; avoid drifting `.gitignore` from actual toolchain to reduce noise.
-
-## Technical debt
-
-- **None accumulated** — no shortcuts in implementation because there is no implementation.
-
-## Monitoring and observability
-
-- **Not applicable** until a service or long-running tool exists.
-
-## Summary
-
-| Category | Level | Notes |
-|----------|--------|--------|
-| Security (current) | Low | No runtime |
-| Maintainability | N/A | No code |
-| Test coverage | None | See `TESTING.md` |
-| CI/CD | Absent | Add with first code |
-
-Revisit after the first milestone of working code and dependencies.
+- No logging, metrics, or tracing libraries in use yet — acceptable for scaffold; plan before adding networked features.

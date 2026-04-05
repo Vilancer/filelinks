@@ -1,45 +1,31 @@
-# Conventions and code style
+# Coding conventions
 
-**Snapshot:** No application source code or formatter/linter configuration is checked in. Conventions below cover **what exists** and **reasonable defaults** when code is added.
+## TypeScript
 
-## Version control
+- **Module style:** CommonJS packages (`"type": "commonjs"` in `packages/*/package.json`); `main`/`types` point to emitted `./src/index.js` / `./src/index.d.ts` under `dist/` after build.
+- **Imports:** `importHelpers` enabled via `tsconfig.base.json`; `tslib` is a runtime dependency in each package.
+- **Spec files:** Co-located as `*.spec.ts` next to sources under `packages/*/src/lib/` (excluded from lib build in `tsconfig.lib.json`).
 
-- **Git** is used; default branch tracks `origin/main` (per workspace).
-- `.gitignore` is comprehensive for **Node/JavaScript** ecosystems: `node_modules/`, build outputs (`dist`, `.next`), caches (`.eslintcache`, `.parcel-cache`), env files (`.env`), Yarn PnP, etc.
+## ESLint
 
-## Language and formatting
+- **Flat config** at repo root: `eslint.config.mjs` uses `@nx/eslint-plugin` presets (`flat/base`, `flat/typescript`, `flat/javascript`).
+- **Module boundaries:** `@nx/enforce-module-boundaries` is enabled for `**/*.{ts,tsx,js,jsx}` with `enforceBuildableLibDependency: true` — follow Nx dependency graph when adding imports between projects.
+- **Ignores:** `dist`, `out-tsc`, Vitest timestamp configs (`**/vitest.config.*.timestamp*`).
+- **Per-package:** `packages/core/eslint.config.mjs`, `packages/cli/eslint.config.mjs`, `packages/git-hook/eslint.config.mjs` extend/configure package lint.
 
-- **Not defined** — no Prettier, ESLint, Rustfmt, or Black config in the repo.
-- When adding JS/TS, prefer **one** formatter and **one** linter committed at repo root to match the breadth of `.gitignore`.
+## Formatting
 
-## Naming
+- **Prettier** is listed at the root; no root `format` script in `package.json`. Align with team choice (e.g. add `format` script or editor format-on-save).
 
-- **Project name:** `filelinks` (see `README.md`).
-- **File naming:** TBD with chosen language (e.g. `kebab-case` for CLI tools vs idiomatic module names).
+## Naming and exports
 
-## Error handling and logging
+- **Public API:** Each package exposes symbols through `packages/<name>/src/index.ts` (barrel pattern).
+- **Library modules:** `lib/<feature>.ts` with matching `lib/<feature>.spec.ts`.
 
-- No patterns to cite; no `try`/`catch` or logging utilities in-tree.
+## Error handling
 
-## Documentation
+No established pattern yet — current functions return strings with no `try/catch` or `Result` types. Introduce consistent error handling when adding I/O or external calls.
 
-- **README** is the public face; keep it updated when install/run instructions exist.
-- **Internal planning:** `.planning/codebase/*.md` for GSD; refresh after major structural changes.
+## Comments and TODOs
 
-## Environment variables
-
-- `.gitignore` blocks `.env` and `.env.*` except `!.env.example`. If secrets are needed later, document names in `.env.example` **without** values, and never commit real secrets.
-
-## Dependencies
-
-- **None declared.** When a manifest appears, prefer **pinned** versions (lockfile) and document minimum runtime (Node version, etc.) in `README.md` or `STACK.md`.
-
-## Summary
-
-| Area | Status |
-|------|--------|
-| Linter / formatter | Not configured |
-| Test layout | Not established |
-| Module boundaries | N/A |
-
-Establish team conventions in config files as soon as the first code lands.
+No `TODO`/`FIXME` markers in application source at present (only unrelated strings in lockfile metadata).

@@ -1,41 +1,54 @@
 # Repository structure
 
-**Root:** `/mnt/malek/github/vilancer/filelinks/filelinks` (also referenced as project root in GSD metadata).
-
-## Top-level layout (current)
-
-| Path | Kind | Purpose |
-|------|------|---------|
-| `README.md` | Doc | Project name, one-line vision |
-| `LICENSE` | Legal | License text |
-| `.gitignore` | Config | Ignore rules (Node/JS-oriented) |
-| `.planning/` | Planning | GSD planning artifacts (this map lives under `.planning/codebase/`) |
-
-## Source and test directories
-
-- **None.** No `src/`, `lib/`, `tests/`, `spec/`, or similar directories are present in the repository.
-
-## Configuration and tooling
-
-- **No** `package.json`, `tsconfig.json`, `eslint.config.*`, `Makefile`, or `Dockerfile` at root.
-- **No** `.github/` workflows visible at repository root.
-
-## Naming conventions (code)
-
-- **Not established** — no application filenames to observe. Future code should follow one consistent convention per language (e.g. `snake_case` vs `camelCase` per ecosystem norms).
-
-## Planning artifacts
+## Top level
 
 | Path | Purpose |
 |------|---------|
-| `.planning/codebase/STACK.md` | Technology stack snapshot |
-| `.planning/codebase/INTEGRATIONS.md` | External services |
-| `.planning/codebase/ARCHITECTURE.md` | System design |
-| `.planning/codebase/STRUCTURE.md` | This file |
-| `.planning/codebase/CONVENTIONS.md` | Code style and patterns |
-| `.planning/codebase/TESTING.md` | Tests and quality gates |
-| `.planning/codebase/CONCERNS.md` | Risks and debt |
+| `package.json` | Root workspace metadata; devDependencies for Nx, TS, ESLint, Vitest, Verdaccio. |
+| `pnpm-workspace.yaml` | pnpm workspace and `allowBuilds` allowlist. |
+| `pnpm-lock.yaml` | Lockfile. |
+| `nx.json` | Nx workspace config, plugins (`@nx/eslint`, `@nx/vitest`), release `preVersionCommand`. |
+| `project.json` | Root Nx project: `local-registry` (Verdaccio). |
+| `tsconfig.base.json` | Shared TS options and path aliases. |
+| `eslint.config.mjs` | Root flat ESLint config (Nx presets, module boundaries). |
+| `vitest.workspace.ts` | Vitest workspace glob patterns. |
 
-## Summary
+## Packages (`packages/`)
 
-The repo is **flat and minimal**: documentation, license, ignore file, and planning docs. Expect structure to grow once a language and package layout are chosen (e.g. `packages/` monorepo vs single `src/` tree).
+Each package follows a similar layout:
+
+```
+packages/<name>/
+  package.json          # npm package name and version
+  project.json          # Nx targets: build, nx-release-publish
+  tsconfig.json         # extends base
+  tsconfig.lib.json     # library build
+  tsconfig.spec.json    # tests
+  eslint.config.mjs     # package ESLint
+  src/
+    index.ts            # public API re-exports
+    lib/
+      <name>.ts         # implementation
+      <name>.spec.ts    # Vitest specs
+```
+
+Concrete paths:
+
+- **Core:** `packages/core/src/lib/core.ts`, `packages/core/src/lib/core.spec.ts`
+- **CLI:** `packages/cli/src/lib/cli.ts`, `packages/cli/src/lib/cli.spec.ts`
+- **Git hook:** `packages/git-hook/src/lib/git-hook.ts`, `packages/git-hook/src/lib/git-hook.spec.ts`
+
+## Build artifacts (gitignored typical)
+
+- `dist/` — `tsc` output per `project.json` `outputPath` (e.g. `dist/packages/core`).
+- `coverage/` — Vitest coverage per Nx outputs.
+- `tmp/local-registry/` — Verdaccio storage (see `.verdaccio/config.yml`).
+
+## Planning docs
+
+- `.planning/codebase/` — this codebase map (GSD / maintenance).
+
+## Naming
+
+- **Scoped packages:** `@filelinks/core`, `@filelinks/git-hook`.
+- **CLI package:** unscoped name `filelinks` in `packages/cli/package.json` (same as root workspace name `"filelinks"` in root `package.json` — be explicit when referring to “the CLI package” vs the repo).
