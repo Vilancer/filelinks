@@ -4,7 +4,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** an
 
 ## What this repo is
 
-**filelinks** is an Nx + pnpm monorepo: **`@filelinks/core`** holds the config schema, **`linkType`** metadata, config loading (**jiti**), git paths, and **`matchStagedLinks`**. The **`filelinks`** CLI package is built in Phase 3 (roadmap).
+**filelinks** is an Nx + pnpm monorepo: **`@filelinks/core`** holds the config schema, **`linkType`** metadata, config loading (**jiti**), git paths, and **`matchStagedLinks`**. The **`filelinks`** CLI package is built in Phase 4 (roadmap); Phase 3 evolves core with Effect Schema and typed errors.
 
 ## Commands (run from repo root)
 

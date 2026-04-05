@@ -38,7 +38,7 @@ When someone changes a file, they get a reliable signal about which related file
 
 - Product specification: `docs/filelinks-docs.docx` (config shape, CLI commands, phased roadmap).
 - Codebase map: `.planning/codebase/` (stack, structure, conventions).
-- **`@filelinks/core`** implements Phase 1 schema, config load, git reader, matcher, `resolvePrompt`, and Phase 2 **`linkType`** (see `01-VERIFICATION.md`). The **`filelinks`** CLI package remains scaffold until Phase 3.
+- **`@filelinks/core`** implements Phase 1 schema, config load, git reader, matcher, `resolvePrompt`, and Phase 2 **`linkType`** (see `01-VERIFICATION.md`). Phase 3 refactors core with Effect Schema and typed errors; the **`filelinks`** CLI package remains scaffold until **Phase 4**.
 
 ## Constraints
 
