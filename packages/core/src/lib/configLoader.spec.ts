@@ -46,6 +46,7 @@ describe('configLoader', () => {
   });
 
   it('normalizeError maps ConfigValidationError from loader', () => {
+    expect.assertions(2);
     try {
       loadFileLinksConfig(invalidSchemaFixtureDir);
     } catch (e) {
