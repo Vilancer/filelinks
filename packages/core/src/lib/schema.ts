@@ -47,8 +47,8 @@ const decodeLinks = Schema.decodeUnknownSync(Schema.Array(FileLinkEntrySchema));
 const decodeConfig = Schema.decodeUnknownSync(FileLinkConfigSchema);
 
 export function defineLinks(
-  links: unknown,
-  config?: unknown,
+  links: readonly FileLinkEntry[],
+  config?: FileLinkConfig,
 ): { links: FileLinkEntry[]; config: FileLinkConfig } {
   const decodedLinks = decodeLinks(links);
   const decodedConfig = decodeConfig(config ?? {});
