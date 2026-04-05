@@ -1,0 +1,13 @@
+---
+description: filelinks monorepo layout, linkType, and Nx commands for agents
+globs: "**/*.{ts,tsx,js,mjs,cjs}"
+alwaysApply: false
+---
+
+# filelinks — architecture
+
+- **Packages:** `packages/core` → `@filelinks/core` (schema, `linkType`, config loader, git reader, matcher, `resolvePrompt`). `packages/cli` → `filelinks` CLI. `packages/git-hook` → `@filelinks/git-hook`.
+- **`linkType`:** Optional on `FileLinkEntry`: `file-file` | `dir-dir` | `file-dir` | `dir-file`. Descriptions in `packages/core/src/lib/linkType.ts`. Matching remains **minimatch**; omitting `linkType` is valid.
+- **Paths:** `tsconfig.base.json` aliases `@filelinks/core`, `filelinks`, `@filelinks/git-hook`.
+- **Commands:** From repo root — `pnpm test` (or `pnpm run test:ci` with Nx Cloud), `build`, `lint`; single package `pnpm exec nx run core:test`.
+- **Docs:** `CONTRIBUTING.md`, `.planning/codebase/ARCHITECTURE.md`, `AGENTS.md`.
