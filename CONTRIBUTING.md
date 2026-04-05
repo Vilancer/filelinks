@@ -3,7 +3,7 @@
 ## Repository layout
 
 - **`packages/core`** — `@filelinks/core`: schema (`defineLinks`), `linkType` helpers, config loader (**jiti**), git reader, `matchStagedLinks`, `resolvePrompt`.
-- **`packages/cli`** — `filelinks` npm package (CLI; Phase 3 MVP).
+- **`packages/cli`** — `filelinks` npm package (CLI; Phase 4 MVP).
 - **`packages/git-hook`** — `@filelinks/git-hook` (post-v1 hook helpers).
 
 Planning and deep maps live under **`.planning/`** (roadmap, requirements, `codebase/*.md`).
