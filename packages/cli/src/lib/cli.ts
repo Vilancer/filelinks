@@ -1,11 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { normalizeError } from '@filelinks/core';
 import { Command } from 'commander';
 
-import { runAdd } from './runAdd';
-import { runCheck } from './runCheck';
-import { runList } from './runList';
+import { runAdd } from './runAdd.js';
+import { runCheck } from './runCheck.js';
+import { runList } from './runList.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function readVersion(): string {
   let dir = __dirname;
@@ -114,6 +118,7 @@ export function runCli(argv: string[]): void {
           cwd: g.cwd,
           configPath: g.configPath,
           verbose: g.verbose,
+          json: g.json,
         });
       } catch (e: unknown) {
         const h = normalizeError(e);

@@ -1,13 +1,14 @@
 # Phase 4: CLI MVP - Context
 
 **Gathered:** 2026-04-05  
+**Updated:** 2026-04-06 (Ink + searchable paths for **`add`**)  
 **Status:** Ready for planning
 
 <domain>
 
 ## Phase Boundary
 
-Ship the **`filelinks`** CLI (**Commander**): **`check`** (staged paths + matcher + policy exit codes), **`list`** (declared links in a readable table, **`linkType`** when set), **`add`** (interactive collection of trigger / affects / reason / severity and **append or create** `filelinks.config.ts`). Expose **`bin`** for **`npx filelinks`** after publish and satisfy **DOC-01** (install, minimal config example, command usage). Scope is **CLI + package metadata + README**; **not** git-hook package, graph, AI, or editor.
+Ship the **`filelinks`** CLI (**Commander**): **`check`** (staged paths + matcher + policy exit codes), **`list`** (declared links in a readable table, **`linkType`** when set), **`add`** (**Ink** + **React** interactive UI: searchable file/dir picks, guided fields, **append or create** `filelinks.config.ts`). Expose **`bin`** for **`npx filelinks`** after publish and satisfy **DOC-01** (install, minimal config example, command usage). Scope is **CLI + package metadata + README**; **not** git-hook package, graph, AI, or editor.
 
 </domain>
 
@@ -32,10 +33,19 @@ Ship the **`filelinks`** CLI (**Commander**): **`check`** (staged paths + matche
 
 ### `filelinks add` (CLI-03)
 
-- **D-10:** **Interactive** prompts collect: **trigger**; **one or more** `{ file, reason }` pairs (loop until done); **`severity`**; optional **`linkType`**.
+- **D-10:** **Interactive** flow collects: **trigger**; **one or more** `{ file, reason }` pairs (loop until done); **`severity`**; optional **`linkType`** — same data as before, but **UI** is governed by **D-19–D-21**.
 - **D-11:** If **`filelinks.config.ts` is missing**, **create** a valid minimal file (default export **`defineLinks([...], {})`** pattern consistent with **`loadFileLinksConfig`**).
 - **D-12:** If the file **exists**, **append** a new link entry to the declared links **without corrupting** the file; if a safe edit cannot be performed, **fail with a clear error** (do not write a broken file).
-- **D-13:** Prompt/UX library (readline vs small prompt helper) is **Claude’s discretion**; prefer **minimal new dependencies** unless justified in planning.
+- **D-13:** **Superseded for `add`** by **D-19** (Ink + React). **`check`** / **`list`** stay **stream output** per **D-06–D-09** and **D-22**.
+
+### Interactive UX for `add` (Ink, search, selection) — **2026-04-06**
+
+- **D-19:** **`filelinks add`** is implemented with **Ink** and **React** (terminal UI): clear **steps**, **labels**, and **keyboard** navigation — **not** unlabeled **readline** prompts.
+- **D-20:** **Trigger** and **each affected path** use **searchable selection**: user types a **filter** substring (e.g. `tes`); the UI shows **matching repo-relative files and/or directories**; user **picks** an item and the CLI **stores the full repo-relative path** (no manual typing or pasting of full paths for normal use).
+- **D-21:** **`linkType`**, when not skipped, is chosen from the **four** valid values via **keyboard selection** (e.g. list + arrows + Enter), **not** by typing the raw enum string.
+- **D-22:** **`check`** and **`list`** remain **plain stdout** (human text / **`--json`**) **without** an Ink full-screen UI, so **CI** and **piping** stay predictable.
+- **D-23:** **Candidate paths** for search: prefer **git-backed** listing inside a repo (e.g. tracked + optionally untracked per **04-RESEARCH.md**); **fallback** to a bounded filesystem walk from **`--cwd`** when not in git. **Cap** results for huge repos (**implementer discretion**, document if useful).
+- **D-24:** If global **`--json`** is set while running **`add`**: **document** behavior — e.g. **refuse** with a clear stderr message that **`add` is interactive only**, or **ignore** **`--json`** for this subcommand (**pick one**, stay consistent in README).
 
 ### Global CLI surface (discovery, flags, bin) (CLI-04, DOC-01)
 
@@ -54,6 +64,7 @@ Ship the **`filelinks`** CLI (**Commander**): **`check`** (staged paths + matche
 - **`--json`** schema and **pretty-printing** vs one-line JSON.
 - **Table** formatting (fixed width vs tabs), **ANSI colors** (if any), and **`--no-color`** behavior.
 - **Implementation strategy** for **`add`** file edits (AST vs constrained string edit) subject to **D-11–D-12**.
+- **Ink** component layout, exact **npm** packages for **select** / **text input** (see **04-RESEARCH.md**), and **Vitest** strategy for **Ink** (e.g. **`ink-testing-library`**) subject to **D-19–D-21**.
 
 ### Folded Todos
 
@@ -112,6 +123,7 @@ _None — no matching pending todos for this phase._
 
 - CLI **`check`**: load config → staged paths → **`matchStagedLinks`** → severity/exit policy → print.
 - CLI **`list`**: load config → print **links** (and **global `config`** if worth showing — **optional**, not required by v1 table).
+- CLI **`add`**: **Ink** UI → collect entry → **`defineLinks`** validation → **full-file** write; **path pick** uses **`getGitRepoRoot`** + **`git ls-files`** (or fallback) per **D-23** and **04-RESEARCH.md**.
 
 </code_context>
 

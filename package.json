@@ -6,7 +6,8 @@
   "scripts": {
     "test": "CI=true NX_CLOUD=false pnpm exec nx run-many -t test --parallel=3 --exclude=filelinks",
     "test:ci": "pnpm exec nx run-many -t test-ci --parallel=3 --exclude=filelinks",
-    "prepare": "husky"
+    "prepare": "husky",
+    "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -53,5 +54,8 @@
     "vite": "^8.0.0",
     "vitest": "~4.1.0"
   },
-  "nx": {}
+  "nx": {},
+  "dependencies": {
+    "filelinks": "link:packages/cli"
+  }
 }

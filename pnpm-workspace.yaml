@@ -6,3 +6,5 @@ allowBuilds:
   esbuild: true
   nx: true
   unrs-resolver: true
+overrides:
+  filelinks: link:packages/cli

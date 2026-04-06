@@ -5,8 +5,8 @@ import {
   normalizeError,
 } from '@filelinks/core';
 
-import type { CheckViolationJson } from './formatters';
-import { printCheckJson } from './formatters';
+import type { CheckViolationJson } from './formatters.js';
+import { printCheckJson } from './formatters.js';
 
 export type RunCheckOpts = {
   cwd: string;

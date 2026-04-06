@@ -4,8 +4,8 @@ import {
   type FileLinkEntry,
 } from '@filelinks/core';
 
-import type { ListRowJson } from './formatters';
-import { printListJson } from './formatters';
+import type { ListRowJson } from './formatters.js';
+import { printListJson } from './formatters.js';
 
 export type RunListOpts = {
   cwd: string;
@@ -50,12 +50,24 @@ export function runList(opts: RunListOpts): number {
     printListJson(rows);
   } else {
     const headers = ['Trigger', 'Affected', 'Reason', 'Severity', 'linkType'];
-    console.log(headers.join('\t'));
+    const toCols = (r: ListRowJson): string[] => [
+      r.trigger,
+      r.affectedFile,
+      r.reason,
+      r.severity,
+      r.linkType === null ? '—' : r.linkType,
+    ];
+    const allRows = rows.map(toCols);
+    const widths = headers.map((h, i) =>
+      Math.max(h.length, ...allRows.map((r) => r[i]?.length ?? 0)),
+    );
+    const pad = (v: string, i: number): string =>
+      v.padEnd(widths[i] ?? v.length);
+    const fmt = (cols: string[]): string => cols.map(pad).join('  ');
+
+    console.log(fmt(headers));
     for (const r of rows) {
-      const linkCol = r.linkType === null ? '—' : r.linkType;
-      console.log(
-        [r.trigger, r.affectedFile, r.reason, r.severity, linkCol].join('\t'),
-      );
+      console.log(fmt(toCols(r)));
     }
   }
 
