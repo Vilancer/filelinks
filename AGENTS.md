@@ -18,9 +18,18 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 
 - If you changed anything under `packages/cli`, always run verification in this order:
   1. `pnpm exec nx run cli:test --skip-nx-cache`
-  2. `pnpm exec nx run cli:build --skip-nx-cache`
-  3. In the linked consumer project, run `pnpm run cli:link` to refresh the local symlinked CLI.
-- Do not skip step 3 when validating changes against a linked external test project.
+  2. `pnpm run cli:test:e2e`
+  3. `pnpm exec nx run cli:build --skip-nx-cache`
+  4. In the linked consumer project, run `pnpm run cli:link` to refresh the local symlinked CLI.
+- Do not skip step 4 when validating changes against a linked external test project.
+
+## CLI E2E testing convention
+
+- Keep CLI end-to-end contract tests in `packages/cli/src/lib/cli.e2e.spec.ts`.
+- Scope E2E to command-boundary behavior (`runCli`) and global option wiring (`--cwd`, `--config`, `--json`) before command execution internals.
+- Use `[e2e]` in `describe(...)` names so E2E intent is obvious during triage and reviews.
+- Run E2E locally with `pnpm run cli:test:e2e`.
+- Husky pre-commit enforces this via `pnpm run cli:test:e2e` after `lint-staged` and `pnpm test`.
 
 ## Architecture rules
 
@@ -29,7 +38,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 - **Specs** live as `*.spec.ts` next to sources under `packages/*/src/lib/`.
 - **No duplicated domain literals in consumers:** when CLI/UI needs domain enums or labels (for example `linkType` options), import the canonical constants/helpers from `@filelinks/core` (for example `LINK_TYPES`, `LINK_TYPE_DESCRIPTIONS`) instead of hardcoding string unions in `packages/cli`.
 - **`FileLinkEntry.linkType`** is optional: `file-file` \| `dir-dir` \| `file-dir` \| `dir-file`. Matching stays **minimatch** on repo-relative paths; do not break backward compatibility for configs without `linkType`.
-- Follow **ESLint** (Nx flat config) and **Prettier** (`.prettierrc`). Pre-commit runs **lint-staged** + **`pnpm test`** via Husky; **commit-msg** enforces **Conventional Commits** (`feat`, `fix`, `chore`, …).
+- Follow **ESLint** (Nx flat config) and **Prettier** (`.prettierrc`). Pre-commit runs **lint-staged** + **`pnpm test`** + **`pnpm run cli:test:e2e`** via Husky; **commit-msg** enforces **Conventional Commits** (`feat`, `fix`, `chore`, …).
 
 ## Planning artifacts
 

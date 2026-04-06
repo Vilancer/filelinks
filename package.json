@@ -6,6 +6,7 @@
   "scripts": {
     "test": "CI=true NX_CLOUD=false pnpm exec nx run-many -t test --parallel=3 --exclude=filelinks",
     "test:ci": "pnpm exec nx run-many -t test-ci --parallel=3 --exclude=filelinks",
+    "cli:test:e2e": "pnpm --dir packages/cli exec vitest run src/lib/cli.e2e.spec.ts",
     "prepare": "husky",
     "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
   },
