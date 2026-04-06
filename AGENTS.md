@@ -1,10 +1,10 @@
 # Agent instructions — filelinks
 
-Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** and **`.planning/codebase/ARCHITECTURE.md`** for full detail.
+Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (includes a **documentation map**), **`.planning/codebase/ARCHITECTURE.md`**, and **`.planning/codebase/TESTING.md`** for full detail.
 
 ## What this repo is
 
-**filelinks** is an Nx + pnpm monorepo: **`@filelinks/core`** holds the config schema, **`linkType`** metadata, config loading (**jiti**), git paths, and **`matchStagedLinks`**. The **`filelinks`** CLI package is built in Phase 4 (roadmap); Phase 3 evolves core with Effect Schema and typed errors.
+**filelinks** is an Nx + pnpm monorepo: **`@filelinks/core`** holds config loading (**jiti**), git paths, **`matchStagedLinks`**, and **`normalizeError`**. Domain and config shapes are modeled with **Effect** (**`effect/Schema`**) as the primary typing and validation layer—define new structs/literals with `Schema.*`, decode at boundaries, and reuse exported schema-derived types. The **`filelinks`** CLI lives in **`packages/cli`** and consumes core.
 
 ## Commands (run from repo root)
 
@@ -16,6 +16,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** an
 
 ## Architecture rules
 
+- **Effect Schema** (`effect/Schema`) is the default for **config and domain models** in core: add or change fields in `packages/core/src/lib/schema.ts` (and related modules), decode with `Schema.decodeUnknownSync` / `Schema.decodeUnknown` at load boundaries, and surface parse failures through **`normalizeError`** where appropriate. Do not introduce parallel validation stacks (e.g. Zod) for the same shapes without an explicit decision.
 - **Public API** is exported from each package’s `src/index.ts` (barrel).
 - **Specs** live as `*.spec.ts` next to sources under `packages/*/src/lib/`.
 - **`FileLinkEntry.linkType`** is optional: `file-file` \| `dir-dir` \| `file-dir` \| `dir-file`. Matching stays **minimatch** on repo-relative paths; do not break backward compatibility for configs without `linkType`.

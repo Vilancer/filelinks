@@ -17,6 +17,11 @@ export type LoadedFileLinksConfig = {
   config: FileLinkConfig;
 };
 
+export type LoadFileLinksConfigOptions = {
+  /** When set, load this file instead of walking upward for `filelinks.config.ts`. */
+  readonly configPath?: string;
+};
+
 const decodeFileLinksFile = Schema.decodeUnknownSync(FileLinksFileSchema);
 
 export function findConfigFile(startDir: string): string | null {
@@ -37,21 +42,14 @@ export function findConfigFile(startDir: string): string | null {
   return null;
 }
 
-export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
-  const file = findConfigFile(startDir);
-  if (!file) {
-    throw new ConfigNotFoundError(
-      `filelinks.config.ts not found when searching upward from ${path.resolve(startDir)}`,
-    );
-  }
-
+function loadFileLinksConfigFromFile(file: string): LoadedFileLinksConfig {
   const jiti = createJiti(__filename);
   const loaded = jiti(file) as { default?: unknown };
   const exported = loaded.default;
 
   if (!exported || typeof exported !== 'object' || Array.isArray(exported)) {
     throw new ConfigExportShapeError(
-      `filelinks.config.ts must default-export a non-array object (got ${typeof exported})`,
+      `Config file must default-export a non-array object (got ${typeof exported})`,
     );
   }
 
@@ -60,12 +58,12 @@ export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
   const configRaw = value['config'];
   if (!Array.isArray(linksRaw)) {
     throw new ConfigExportShapeError(
-      'filelinks.config.ts default export must include a links array',
+      'Config default export must include a links array',
     );
   }
   if (!configRaw || typeof configRaw !== 'object' || Array.isArray(configRaw)) {
     throw new ConfigExportShapeError(
-      'filelinks.config.ts default export must include a config object',
+      'Config default export must include a config object',
     );
   }
 
@@ -77,11 +75,38 @@ export function loadFileLinksConfig(startDir: string): LoadedFileLinksConfig {
     };
   } catch (e: unknown) {
     if (isParseError(e)) {
-      throw new ConfigValidationError(
-        'filelinks.config.ts failed schema validation',
-        { cause: e },
-      );
+      throw new ConfigValidationError('Config file failed schema validation', {
+        cause: e,
+      });
     }
     throw e;
   }
+}
+
+/**
+ * Load `filelinks.config.ts` by walking up from `startDir`, or an explicit path via `options.configPath`.
+ */
+export function loadFileLinksConfig(
+  startDir: string,
+  options?: LoadFileLinksConfigOptions,
+): LoadedFileLinksConfig {
+  const resolvedStart = path.resolve(startDir);
+
+  let file: string | null;
+  if (options?.configPath !== undefined && options.configPath !== '') {
+    const p = options.configPath;
+    file = path.isAbsolute(p) ? p : path.resolve(resolvedStart, p);
+    if (!fs.existsSync(file)) {
+      throw new ConfigNotFoundError(`Config file not found: ${file}`);
+    }
+  } else {
+    file = findConfigFile(resolvedStart);
+    if (!file) {
+      throw new ConfigNotFoundError(
+        `filelinks.config.ts not found when searching upward from ${resolvedStart}`,
+      );
+    }
+  }
+
+  return loadFileLinksConfigFromFile(file);
 }

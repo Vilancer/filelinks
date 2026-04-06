@@ -1,0 +1,20 @@
+import { describe, expect, it } from 'vitest';
+
+import { serializeFileLinksConfig } from './runAdd';
+
+describe('serializeFileLinksConfig', () => {
+  it('produces a loadable config file (integration)', () => {
+    const ts = serializeFileLinksConfig(
+      [
+        {
+          trigger: 'x',
+          affects: [{ file: 'y', reason: 'z' }],
+          severity: 'warn',
+        },
+      ],
+      {},
+    );
+    expect(ts).toContain("import { defineLinks } from '@filelinks/core'");
+    expect(ts).toContain('export default defineLinks');
+  });
+});

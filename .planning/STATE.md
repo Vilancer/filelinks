@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: '2026-04-05T19:16:11.979Z'
-last_activity: 2026-04-05
+last_updated: '2026-04-05T19:32:57.862Z'
+last_activity: 2026-04-05 -- Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 4
+  total_plans: 7
   completed_plans: 4
   percent: 50
 ---
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 **Core value:** When someone changes a file, they get a reliable signal about which related files must stay in sync—without relying on same-language import graphs alone.  
-**Current focus:** Phase 3 — Core — Effect & typed errors
+**Current focus:** Phase 4 — cli-mvp
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Executing Phase 3
-Last activity: 2026-04-05
+Phase: 4 (cli-mvp) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 4
+Last activity: 2026-04-05 -- Phase 4 execution started
 
 Progress: [████░░░░░░] 50%
 

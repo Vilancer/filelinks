@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { ConfigValidationError } from './errors';
+import { ConfigNotFoundError, ConfigValidationError } from './errors';
 import { normalizeError } from './handleError';
 import { findConfigFile, loadFileLinksConfig } from './configLoader';
 
@@ -54,5 +54,30 @@ describe('configLoader', () => {
       expect(h.ok).toBe(false);
       expect(h.code).toBe('CONFIG_VALIDATION');
     }
+  });
+
+  it('loadFileLinksConfig loads via explicit configPath relative to startDir', () => {
+    const { links, config } = loadFileLinksConfig(fixtureDir, {
+      configPath: 'custom.config.ts',
+    });
+    expect(links.length).toBe(1);
+    expect(links[0]?.trigger).toBe('apps/**/*.ts');
+    expect(config.prompt?.temperature).toBe(0.2);
+  });
+
+  it('loadFileLinksConfig resolves configPath from nested startDir', () => {
+    const nested = path.join(fixtureDir, 'nested', 'deep');
+    fs.mkdirSync(nested, { recursive: true });
+    const { links } = loadFileLinksConfig(nested, {
+      configPath: '../../custom.config.ts',
+    });
+    expect(links.length).toBe(1);
+    expect(links[0]?.trigger).toBe('apps/**/*.ts');
+  });
+
+  it('loadFileLinksConfig throws ConfigNotFoundError when configPath file missing', () => {
+    expect(() =>
+      loadFileLinksConfig(fixtureDir, { configPath: 'missing.config.ts' }),
+    ).toThrow(ConfigNotFoundError);
   });
 });
