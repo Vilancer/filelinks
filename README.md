@@ -4,13 +4,15 @@ A language-agnostic tool for declaring semantic relationships between files — 
 
 ## Install
 
+Install the **`filelinks`** CLI and, in the project where the config file lives, **`@filelinks/core`** (your `filelinks.config.ts` imports `defineLinks` from it; Node resolves that import from **your** app’s `node_modules`, not from inside the CLI).
+
 ```bash
-pnpm add -D filelinks
-# or
-npm install filelinks
+pnpm add -D filelinks @filelinks/core
 ```
 
-The CLI package name on npm is **`filelinks`**. Core types and `defineLinks` live in **`@filelinks/core`** (pulled in as a dependency of the CLI).
+```bash
+npm install --save-dev filelinks @filelinks/core
+```
 
 ## Config
 
@@ -66,10 +68,13 @@ filelinks add
 
 ## Local development (this repo)
 
+From the monorepo root, build **core** first (the CLI depends on it), then the CLI:
+
 ```bash
+pnpm exec nx run core:build
 pnpm exec nx run cli:build
 node packages/cli/dist/src/index.js --version
 node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
 ```
 
-Run tests: `pnpm test` (see **`CONTRIBUTING.md`**). To try the built CLI against **another clone or a fresh git repo**, see **Trying the CLI in another directory** in **`CONTRIBUTING.md`**.
+Run tests: **`pnpm test`** (see **`CONTRIBUTING.md`**). If you use **`pnpm link filelinks`** (or a **`file:`** CLI) in another repo, install **`@filelinks/core`** in that repo too — see **Trying the CLI in another directory** in **`CONTRIBUTING.md`** for **`file:`** examples and link steps.
