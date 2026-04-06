@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 4 complete — all plans summarized
-last_updated: '2026-04-06T12:00:00.000Z'
-last_activity: 2026-04-06 -- Phase 4 execution complete (Ink add, ESM CLI, docs)
+stopped_at: v1.0 MVP milestone archived — use /gsd-new-milestone for next
+last_updated: '2026-04-06T00:00:00.000Z'
+last_activity: 2026-04-06
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,17 +18,16 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-04-02)
+See: `.planning/PROJECT.md` (updated 2026-04-06)
 
 **Core value:** When someone changes a file, they get a reliable signal about which related files must stay in sync—without relying on same-language import graphs alone.  
-**Current focus:** Milestone v1.0 — **complete** (all 4 phases executed)
+**Current focus:** **v1.0 shipped** — planning the **next** milestone (`/gsd-new-milestone`).
 
 ## Current Position
 
-Phase: **4 (cli-mvp)** — **COMPLETE**  
-Plan: **3 of 3** summarized  
-Status: Phase 4 finished; ready for **`/gsd-complete-milestone`**  
-Last activity: 2026-04-06 — Phase 4 execution complete
+Phase: **4 (cli-mvp)** — **COMPLETE** (all plans summarized)  
+Milestone: **v1.0 MVP** — **ARCHIVED** (see `.planning/MILESTONES.md` and `.planning/milestones/`)  
+Last activity: 2026-04-06
 
 Progress: [██████████] 100%
 
@@ -40,7 +39,7 @@ Progress: [██████████] 100%
 
 ### Decisions
 
-See `PROJECT.md` Key Decisions. Phase 2 (`linkType`, docs, Husky, agent rules) verified — see `.planning/phases/02-core-link-types-repo-dx/02-VERIFICATION.md`.
+See `PROJECT.md` Key Decisions. v1.0 scope and archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`.
 
 ### Pending Todos
 
@@ -52,6 +51,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-06T12:00:00.000Z  
-Stopped at: Phase 4 complete  
-Resume file: `.planning/phases/04-cli-mvp/04-CONTEXT.md`
+Last session: 2026-04-06  
+Stopped at: v1.0 milestone completion  
+Resume: Run **`/gsd-new-milestone`** to start the next cycle, or continue product work from `.planning/PROJECT.md`.
