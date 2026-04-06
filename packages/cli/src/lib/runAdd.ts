@@ -1,7 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { stdin as input, stdout as output } from 'node:process';
-import { createInterface } from 'node:readline/promises';
+
+import { createElement } from 'react';
+import { render } from 'ink';
 
 import {
   defineLinks,
@@ -10,8 +11,10 @@ import {
   normalizeError,
   type FileLinkConfig,
   type FileLinkEntry,
-  type LinkType,
 } from '@filelinks/core';
+
+import { AddWizard } from './add-ui/AddWizard.js';
+import { listPathCandidatesWithMeta } from './pathCandidates.js';
 
 export function serializeFileLinksConfig(
   links: FileLinkEntry[],
@@ -26,116 +29,98 @@ export type RunAddOpts = {
   cwd: string;
   configPath?: string;
   verbose: boolean;
+  /** When true, refuse (D-24) — `add` is interactive only. */
+  json?: boolean;
 };
 
-export async function runAdd(opts: RunAddOpts): Promise<number> {
-  const rl = createInterface({ input, output });
+async function commitEntry(
+  opts: RunAddOpts,
+  entry: FileLinkEntry,
+): Promise<number> {
+  const decoded = defineLinks([entry], {});
+  const row = decoded.links[0];
+  if (row === undefined) {
+    console.error('defineLinks returned no entries');
+    return 1;
+  }
 
-  try {
-    const trigger = (
-      await rl.question('Trigger pattern (repo-relative glob): ')
-    ).trim();
-    if (!trigger) {
-      console.error('Trigger is required.');
-      return 1;
-    }
+  let targetPath: string;
+  if (opts.configPath) {
+    targetPath = path.isAbsolute(opts.configPath)
+      ? opts.configPath
+      : path.resolve(opts.cwd, opts.configPath);
+  } else {
+    const found = findConfigFile(opts.cwd);
+    targetPath =
+      found ?? path.join(path.resolve(opts.cwd), 'filelinks.config.ts');
+  }
 
-    const affects: { file: string; reason: string }[] = [];
-    while (true) {
-      const file = (
-        await rl.question('Affected file (empty to finish): ')
-      ).trim();
-      if (!file) {
-        break;
-      }
-      const reason = (await rl.question('Reason: ')).trim();
-      affects.push({ file, reason: reason || 'related' });
-    }
-
-    if (affects.length === 0) {
-      console.error('At least one affected file is required.');
-      return 1;
-    }
-
-    const sevRaw = (await rl.question('Severity (warn|error) [warn]: '))
-      .trim()
-      .toLowerCase();
-    const severity: 'warn' | 'error' = sevRaw === 'error' ? 'error' : 'warn';
-
-    const ltRaw = (
-      await rl.question(
-        'linkType (file-file|dir-dir|file-dir|dir-file, empty to skip): ',
-      )
-    ).trim();
-
-    let linkType: LinkType | undefined;
-    if (ltRaw) {
-      const allowed: LinkType[] = [
-        'file-file',
-        'dir-dir',
-        'file-dir',
-        'dir-file',
-      ];
-      if (!allowed.includes(ltRaw as LinkType)) {
-        console.error(`Invalid linkType: ${ltRaw}`);
-        return 1;
-      }
-      linkType = ltRaw as LinkType;
-    }
-
-    const newEntry: FileLinkEntry = {
-      trigger,
-      affects,
-      severity,
-      ...(linkType !== undefined ? { linkType } : {}),
-    };
-
-    const decoded = defineLinks([newEntry], {});
-    const entry = decoded.links[0];
-    if (entry === undefined) {
-      console.error('defineLinks returned no entries');
-      return 1;
-    }
-
-    let targetPath: string;
-    if (opts.configPath) {
-      targetPath = path.isAbsolute(opts.configPath)
-        ? opts.configPath
-        : path.resolve(opts.cwd, opts.configPath);
-    } else {
-      const found = findConfigFile(opts.cwd);
-      targetPath =
-        found ?? path.join(path.resolve(opts.cwd), 'filelinks.config.ts');
-    }
-
-    if (!fs.existsSync(targetPath)) {
-      const merged = defineLinks([entry], {});
-      fs.writeFileSync(
-        targetPath,
-        serializeFileLinksConfig(merged.links, merged.config),
-        'utf8',
-      );
-      console.log(`Created ${targetPath}`);
-      return 0;
-    }
-
-    const loaded = loadFileLinksConfig(path.dirname(targetPath), {
-      configPath: path.basename(targetPath),
-    });
-    const mergedLinks = [...loaded.links, entry];
-    const merged = defineLinks(mergedLinks, loaded.config);
+  if (!fs.existsSync(targetPath)) {
+    const merged = defineLinks([row], {});
     fs.writeFileSync(
       targetPath,
       serializeFileLinksConfig(merged.links, merged.config),
       'utf8',
     );
-    console.log(`Updated ${targetPath}`);
+    console.log(`Created ${targetPath}`);
     return 0;
+  }
+
+  const loaded = loadFileLinksConfig(path.dirname(targetPath), {
+    configPath: path.basename(targetPath),
+  });
+  const mergedLinks = [...loaded.links, row];
+  const merged = defineLinks(mergedLinks, loaded.config);
+  fs.writeFileSync(
+    targetPath,
+    serializeFileLinksConfig(merged.links, merged.config),
+    'utf8',
+  );
+  console.log(`Updated ${targetPath}`);
+  return 0;
+}
+
+function exitCodeNumber(): number {
+  const c = process.exitCode;
+  return typeof c === 'number' ? c : 0;
+}
+
+export async function runAdd(opts: RunAddOpts): Promise<number> {
+  if (opts.json) {
+    console.error('filelinks add is interactive only; omit --json to run add.');
+    return 1;
+  }
+
+  try {
+    const { waitUntilExit } = render(
+      createElement(AddWizard, {
+        loadCandidates: async () => {
+          const { candidates, directories } = listPathCandidatesWithMeta(
+            opts.cwd,
+          );
+          if (candidates.length === 0) {
+            throw new Error(
+              'filelinks add: no paths found to choose from (empty tree or cwd).',
+            );
+          }
+          return { candidates, directories: [...directories] };
+        },
+        onCommit: async (entry: FileLinkEntry) => {
+          try {
+            return await commitEntry(opts, entry);
+          } catch (e: unknown) {
+            const h = normalizeError(e);
+            console.error(h.message);
+            return 1;
+          }
+        },
+      }),
+    );
+    await waitUntilExit();
+    return exitCodeNumber();
   } catch (e: unknown) {
     const h = normalizeError(e);
     console.error(h.message);
     return 1;
-  } finally {
-    rl.close();
   }
 }

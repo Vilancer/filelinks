@@ -16,8 +16,8 @@ vi.mock('@filelinks/core', async (importOriginal) => {
   };
 });
 
-import { runCheck } from './runCheck';
-import { runList } from './runList';
+import { runCheck } from './runCheck.js';
+import { runList } from './runList.js';
 
 describe('runCheck', () => {
   beforeEach(() => {
@@ -107,8 +107,12 @@ describe('runList', () => {
     const code = runList({ cwd: '/repo', json: false });
     expect(code).toBe(0);
     const lines = log.mock.calls.map((c) => String(c[0]));
-    const dataRows = lines.filter((l) => l.startsWith('t\t'));
+    const dataRows = lines.slice(1);
     expect(dataRows.length).toBe(2);
+    expect(dataRows[0]).toContain('t');
+    expect(dataRows[0]).toContain('a');
+    expect(dataRows[1]).toContain('t');
+    expect(dataRows[1]).toContain('b');
     log.mockRestore();
   });
 });

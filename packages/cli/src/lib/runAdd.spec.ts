@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { serializeFileLinksConfig } from './runAdd';
+import { runAdd, serializeFileLinksConfig } from './runAdd.js';
+
+describe('runAdd', () => {
+  it('refuses --json (D-24)', async () => {
+    const code = await runAdd({
+      cwd: process.cwd(),
+      verbose: false,
+      json: true,
+    });
+    expect(code).toBe(1);
+  });
+});
 
 describe('serializeFileLinksConfig', () => {
   it('produces a loadable config file (integration)', () => {

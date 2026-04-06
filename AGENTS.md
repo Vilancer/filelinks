@@ -14,11 +14,20 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 - **Lint:** `pnpm exec nx run-many -t lint`
 - **Single project:** `pnpm exec nx run core:test` (replace `core` with `cli` / `git-hook`)
 
+## Linked CLI workflow (required after CLI edits)
+
+- If you changed anything under `packages/cli`, always run verification in this order:
+  1. `pnpm exec nx run cli:test --skip-nx-cache`
+  2. `pnpm exec nx run cli:build --skip-nx-cache`
+  3. In the linked consumer project, run `pnpm run cli:link` to refresh the local symlinked CLI.
+- Do not skip step 3 when validating changes against a linked external test project.
+
 ## Architecture rules
 
 - **Effect Schema** (`effect/Schema`) is the default for **config and domain models** in core: add or change fields in `packages/core/src/lib/schema.ts` (and related modules), decode with `Schema.decodeUnknownSync` / `Schema.decodeUnknown` at load boundaries, and surface parse failures through **`normalizeError`** where appropriate. Do not introduce parallel validation stacks (e.g. Zod) for the same shapes without an explicit decision.
 - **Public API** is exported from each package’s `src/index.ts` (barrel).
 - **Specs** live as `*.spec.ts` next to sources under `packages/*/src/lib/`.
+- **No duplicated domain literals in consumers:** when CLI/UI needs domain enums or labels (for example `linkType` options), import the canonical constants/helpers from `@filelinks/core` (for example `LINK_TYPES`, `LINK_TYPE_DESCRIPTIONS`) instead of hardcoding string unions in `packages/cli`.
 - **`FileLinkEntry.linkType`** is optional: `file-file` \| `dir-dir` \| `file-dir` \| `dir-file`. Matching stays **minimatch** on repo-relative paths; do not break backward compatibility for configs without `linkType`.
 - Follow **ESLint** (Nx flat config) and **Prettier** (`.prettierrc`). Pre-commit runs **lint-staged** + **`pnpm test`** via Husky; **commit-msg** enforces **Conventional Commits** (`feat`, `fix`, `chore`, …).
 

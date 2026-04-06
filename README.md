@@ -60,7 +60,7 @@ filelinks list --json
 
 ### `filelinks add`
 
-Interactively add a link and **create or rewrite** `filelinks.config.ts` (safe full-file rewrite).
+Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then **create or rewrite** `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
 
 ```bash
 filelinks add
@@ -77,4 +77,4 @@ node packages/cli/dist/src/index.js --version
 node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
 ```
 
-Run tests: **`pnpm test`** (see **`CONTRIBUTING.md`**). If you use **`pnpm link filelinks`** (or a **`file:`** CLI) in another repo, install **`@filelinks/core`** in that repo too — see **Trying the CLI in another directory** in **`CONTRIBUTING.md`** for **`file:`** examples and link steps.
+Run tests: **`pnpm test`** (see **`CONTRIBUTING.md`**). The published CLI package is **ESM** (`"type": "module"`). If you use **`pnpm link filelinks`** (or a **`file:`** CLI) in another repo, install **`@filelinks/core`** in that repo too — see **Trying the CLI in another directory** in **`CONTRIBUTING.md`** for **`file:`** examples and link steps.

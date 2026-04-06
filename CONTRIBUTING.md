@@ -59,19 +59,45 @@ Use this when you want a **fresh project** (`git init`, your own tree) and to ru
 
    Use **`--cwd`** so the CLI resolves config and git from that project’s root. Use **`--config ./path/to/filelinks.config.ts`** if the config is not in the usual discovery location.
 
-3. **Optional:** Install the CLI into the other project without publishing (pick one):
+3. **Known-good local link flow (recommended):**
 
-   | Approach                | What it does                                                                                               | Where to run what                                                                                                                                                                                                                                                |
-   | ----------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | **Tarball**             | Behaves like a normal dependency                                                                           | In **`packages/cli`**: **`pnpm pack`**. In the **other** project: **`pnpm add /absolute/path/to/filelinks-*.tgz`**.                                                                                                                                              |
-   | **Link by path**        | Symlink this repo’s **`packages/cli`** into the other app’s **`node_modules`** only — **no** “global” step | In the **other** project only: **`pnpm link /absolute/path/to/filelinks/packages/cli`**.                                                                                                                                                                         |
-   | **Global registration** | Registers **`filelinks`** in pnpm’s **global** store once; then each consumer links **by package name**    | **①** In **`packages/cli`**: **`pnpm link`** (registers globally; some pnpm versions use **`pnpm link --global`** for the same idea). **②** In the **other** project: **`pnpm link filelinks`** — that is the step that actually installs the symlink **there**. |
+   In the **other** project:
 
-   **Why “global”?** Step **①** only publishes the local package to pnpm’s global store so **②** can resolve the name **`filelinks`**. The **path** approach skips **①** and ties the consumer directly to a folder.
+   ```json
+   {
+     "scripts": {
+       "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
+     }
+   }
+   ```
 
-   **Undo / unlink:** In the **other** project: **`pnpm unlink filelinks`** (restores a registry install if **`filelinks`** is in **`package.json`**, or remove the dep). If you used **global registration**, also run **`pnpm unlink`** with **no arguments** in **`packages/cli`** to clear the global registration. Path-only links usually only need the consumer **`pnpm unlink`**. Details: **[pnpm link](https://pnpm.io/cli/link)**.
+   Then run:
 
-   If linking fails on your machine, use step 2 (**`node …/dist/src/index.js`**) — no **`pnpm link`** required.
+   ```bash
+   pnpm run cli:link
+   pnpm add -D @filelinks/core@file:../filelinks/packages/core
+   ```
+
+   Use only this **path link** flow for local development. Do not run `pnpm link filelinks` in the consumer project, because it can replace the working path symlink with a stale global link.
+
+   After each local CLI change, rebuild in this repo and refresh in the other project:
+
+   ```bash
+   # in filelinks repo
+   pnpm exec nx run cli:build
+
+   # in the other project
+   pnpm run cli:link
+   ```
+
+   To undo the link in the consumer project:
+
+   ```bash
+   pnpm unlink filelinks
+   pnpm install
+   ```
+
+   If linking fails on your machine, use step 2 (`node …/dist/src/index.js`) with no `pnpm link`.
 
 4. **`@filelinks/core` in the consumer project** (required for **`list`**, **`check`**, and **`add`** once a config exists):
 
