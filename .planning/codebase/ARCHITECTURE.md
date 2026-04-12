@@ -25,7 +25,7 @@ Source entry points re-export lib modules:
 
 ## Data flow
 
-**Config → matcher:** Consumers load `filelinks.config.ts` (via **`jiti`** in `configLoader`) to obtain `{ links, config }`. Each `FileLinkEntry` may include optional **`linkType`** (`file-file` \| `dir-dir` \| `file-dir` \| `dir-file`) describing whether the relationship is file- vs directory-oriented; **matching still uses `minimatch`** on repo-root-relative paths from git—`linkType` is declarative metadata for CLI/list and future validation. `matchStagedLinks(stagedPaths, links)` returns fired entries and missing affected paths.
+**Config → matcher:** Consumers load `filelinks.config.ts` (via **`jiti`** in `configLoader`) to obtain `{ links, config }`. Each `FileLinkEntry` may include optional **`linkType`** (`file-file` \| `dir-dir` \| `file-dir` \| `dir-file`). **Triggers** always match staged paths with **`minimatch`**. **Affected** paths use **`minimatch`** too; when **`linkType`** is **`file-dir`** or **`dir-dir`**, a directory-shaped affect is also satisfied if any staged path is **that directory or a file under it** (repo-relative prefix), because git stages file paths rather than bare directory entries. Entries **without** `linkType` keep the original minimatch-only companion check. `matchStagedLinks(stagedPaths, links)` returns fired entries and missing affected paths.
 
 Cross-package: `tsconfig.base.json` path aliases wire `@filelinks/core` (and future `filelinks` CLI) together.
 

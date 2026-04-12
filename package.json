@@ -8,7 +8,8 @@
     "test:ci": "pnpm exec nx run-many -t test-ci --parallel=3 --exclude=filelinks",
     "cli:test:e2e": "pnpm --dir packages/cli exec vitest run src/lib/cli.e2e.spec.ts",
     "prepare": "husky",
-    "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
+    "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install",
+    "core:link": "pnpm link ../filelinks/packages/core && pnpm install"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -57,6 +58,7 @@
   },
   "nx": {},
   "dependencies": {
+    "@filelinks/core": "link:packages/core",
     "filelinks": "link:packages/cli"
   }
 }

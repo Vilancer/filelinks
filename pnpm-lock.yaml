@@ -6,10 +6,14 @@ settings:
 
 overrides:
   filelinks: link:packages/cli
+  '@filelinks/core': link:packages/core
 
 importers:
   .:
     dependencies:
+      '@filelinks/core':
+        specifier: link:packages/core
+        version: link:packages/core
       filelinks:
         specifier: link:packages/cli
         version: link:packages/cli
@@ -108,7 +112,7 @@ importers:
   packages/cli:
     dependencies:
       '@filelinks/core':
-        specifier: workspace:*
+        specifier: link:../core
         version: link:../core
       commander:
         specifier: ^13.1.0

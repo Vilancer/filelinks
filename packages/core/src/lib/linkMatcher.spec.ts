@@ -39,4 +39,56 @@ describe('matchStagedLinks', () => {
     expect(r).toHaveLength(1);
     expect(r[0]?.entry.linkType).toBe('dir-file');
   });
+
+  it('file-dir: staged file under directory affect satisfies companion (prefix)', () => {
+    const links: FileLinkEntry[] = [
+      {
+        trigger: 'greet.ts',
+        linkType: 'file-dir',
+        affects: [{ file: 'malek', reason: 'test' }],
+        severity: 'error',
+      },
+    ];
+    const r = matchStagedLinks(['greet.ts', 'malek/nested/foo.ts'], links);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.missingAffected).toHaveLength(0);
+  });
+
+  it('file-dir: only trigger staged still reports missing dir companion', () => {
+    const links: FileLinkEntry[] = [
+      {
+        trigger: 'greet.ts',
+        linkType: 'file-dir',
+        affects: [{ file: 'malek', reason: 'test' }],
+      },
+    ];
+    const r = matchStagedLinks(['greet.ts'], links);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.missingAffected).toHaveLength(1);
+  });
+
+  it('file-dir without linkType keeps minimatch-only (no prefix under dir)', () => {
+    const links: FileLinkEntry[] = [
+      {
+        trigger: 'greet.ts',
+        affects: [{ file: 'malek', reason: 'legacy' }],
+      },
+    ];
+    const r = matchStagedLinks(['greet.ts', 'malek/x.ts'], links);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.missingAffected).toHaveLength(1);
+  });
+
+  it('dir-dir: staged path under directory affect satisfies companion', () => {
+    const links: FileLinkEntry[] = [
+      {
+        trigger: 'src/**',
+        linkType: 'dir-dir',
+        affects: [{ file: 'docs', reason: 'sync' }],
+      },
+    ];
+    const r = matchStagedLinks(['src/a.ts', 'docs/readme.md'], links);
+    expect(r).toHaveLength(1);
+    expect(r[0]?.missingAffected).toHaveLength(0);
+  });
 });
