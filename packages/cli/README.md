@@ -1,11 +1,3 @@
-# cli
+# filelinks (CLI package)
 
-This library was generated with [Nx](https://nx.dev).
-
-## Building
-
-Run `nx build cli` to build the library.
-
-## Running unit tests
-
-Run `nx test cli` to execute the unit tests via [Vitest](https://vitest.dev/).
+User-facing docs live in the **repository root** [`README.md`](../../README.md).

@@ -2,8 +2,8 @@
   "name": "@filelinks/core",
   "version": "0.0.1",
   "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "dependencies": {
     "effect": "^3.21.0",
     "jiti": "^2.4.2",

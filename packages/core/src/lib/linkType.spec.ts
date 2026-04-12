@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { LINK_TYPE_DESCRIPTIONS, LINK_TYPES, isLinkType } from './linkType';
+import {
+  LINK_TYPE_DESCRIPTIONS,
+  LINK_TYPES,
+  isDirectoryLevelAffectedLinkType,
+  isLinkType,
+  linkTypeForPathKinds,
+} from './linkType';
 import type { LinkType } from './schema';
 
 describe('linkType', () => {
@@ -23,5 +29,20 @@ describe('linkType', () => {
     expect(isLinkType('file-file')).toBe(true);
     expect(isLinkType('nope')).toBe(false);
     expect(isLinkType(undefined)).toBe(false);
+  });
+
+  it('linkTypeForPathKinds matches LinkTypeSchema quadrants', () => {
+    expect(linkTypeForPathKinds('file', 'file')).toBe('file-file');
+    expect(linkTypeForPathKinds('file', 'dir')).toBe('file-dir');
+    expect(linkTypeForPathKinds('dir', 'file')).toBe('dir-file');
+    expect(linkTypeForPathKinds('dir', 'dir')).toBe('dir-dir');
+  });
+
+  it('isDirectoryLevelAffectedLinkType matches file-dir and dir-dir only', () => {
+    expect(isDirectoryLevelAffectedLinkType(undefined)).toBe(false);
+    expect(isDirectoryLevelAffectedLinkType('file-file')).toBe(false);
+    expect(isDirectoryLevelAffectedLinkType('dir-file')).toBe(false);
+    expect(isDirectoryLevelAffectedLinkType('file-dir')).toBe(true);
+    expect(isDirectoryLevelAffectedLinkType('dir-dir')).toBe(true);
   });
 });
