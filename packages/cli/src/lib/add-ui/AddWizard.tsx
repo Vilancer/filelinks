@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
@@ -63,6 +63,8 @@ export function AddWizard({
     { file: string; reason: string; kind: Exclude<PathKind, 'unknown'> }[]
   >([]);
   const [severity, setSeverity] = useState<'warn' | 'error' | null>(null);
+  /** Set synchronously on severity pick so runCommit never reads stale React state. */
+  const severityRef = useRef<'warn' | 'error' | null>(null);
   const [loadingTick, setLoadingTick] = useState(0);
 
   useEffect(() => {
@@ -299,7 +301,7 @@ export function AddWizard({
     linkType?: LinkType,
     commit?: { severity?: 'warn' | 'error' },
   ) => {
-    const sev = commit?.severity ?? severity;
+    const sev = commit?.severity ?? severityRef.current ?? severity;
     if (sev === null) {
       return;
     }
@@ -593,6 +595,7 @@ export function AddWizard({
             },
           ]}
           onSelect={(v) => {
+            severityRef.current = v;
             setSeverity(v);
             const auto = resolveAutoLinkType();
             if (auto !== null) {
@@ -621,10 +624,14 @@ export function AddWizard({
         <SelectableList<Lt>
           items={items}
           onSelect={(v) => {
+            const sevPick = severityRef.current ?? severity;
+            if (sevPick === null) {
+              return;
+            }
             if (v === 'skip') {
-              void runCommit(undefined);
+              void runCommit(undefined, { severity: sevPick });
             } else {
-              void runCommit(v);
+              void runCommit(v, { severity: sevPick });
             }
           }}
         />
