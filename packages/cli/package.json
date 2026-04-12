@@ -1,10 +1,29 @@
 {
   "name": "filelinks",
   "version": "0.0.1",
-  "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "bin": {
+    "filelinks": "./dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
+    "@filelinks/core": "workspace:*",
+    "commander": "^13.1.0",
+    "fast-glob": "^3.3.3",
+    "ink": "^5.2.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
     "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@nx/vite": "22.6.4",
+    "@types/react": "^18.3.28",
+    "ink-testing-library": "^4.0.0",
+    "vitest": "~4.1.0"
   }
 }

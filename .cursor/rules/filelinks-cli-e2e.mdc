@@ -1,0 +1,24 @@
+---
+description: CLI E2E contract tests and command-boundary coverage
+globs: packages/cli/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# filelinks CLI E2E convention
+
+- Keep command-boundary tests in `packages/cli/src/lib/cli.e2e.spec.ts`.
+- Treat E2E scope as `runCli` wiring and user-facing command contracts, not private helper unit details.
+- Prefer assertions on global option propagation (`--cwd`, `--config`, `--json`) and resulting exit behavior.
+- Label E2E suites with `[e2e]` in `describe(...)` names for easy filtering and review.
+- Use deterministic mocks for `@filelinks/core` and avoid filesystem/network dependency in E2E tests.
+
+## Example
+
+```ts
+describe('[e2e] cli command wiring', () => {
+  it('passes --cwd and --config into check flow', () => {
+    runCli(['node', 'filelinks', '--cwd', '/tmp/repo', '--config', 'cfg.ts', 'check']);
+    expect(loadFileLinksConfig).toHaveBeenCalledWith('/tmp/repo', { configPath: 'cfg.ts' });
+  });
+});
+```
