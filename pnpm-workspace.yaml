@@ -7,4 +7,5 @@ allowBuilds:
   nx: true
   unrs-resolver: true
 overrides:
+  '@filelinks/core': link:packages/core
   filelinks: link:packages/cli

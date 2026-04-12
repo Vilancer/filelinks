@@ -38,74 +38,74 @@ From the repo root:
 
 Path aliases: `@filelinks/core` → `packages/core/src/index.ts` (`tsconfig.base.json`).
 
-## Trying the CLI in another directory
+## Local development: this repo + another project
 
-Use this when you want a **fresh project** (`git init`, your own tree) and to run **`filelinks` without publishing** to npm.
+Use a **second checkout or app** when you want to run **`filelinks`** and your own tests **without publishing**. You always wire **two** packages from this monorepo into the other project: **`@filelinks/core`** and **`filelinks`** (the CLI). Hand-written configs do `import { defineLinks } from '@filelinks/core'`; **jiti** loads that file from the **other** project’s tree, so **`@filelinks/core`** must resolve from **that** project’s **`node_modules`**. The CLI entry comes from the linked **`filelinks`** package.
 
-1. **Build** in this repo (from the root):
+### 1. Build (in the **filelinks** repo root)
 
-   ```bash
-   pnpm exec nx run cli:build
-   ```
+After changes under **`packages/core`** or **`packages/cli`**:
 
-   The runnable entry is **`packages/cli/dist/src/index.js`** (after `tsc`).
+```bash
+pnpm exec nx run core:build
+pnpm exec nx run cli:build
+```
 
-2. **Run by absolute path** (no install in the other project). Replace `<filelinks-repo>` with the path to this monorepo clone:
+One shot: `pnpm exec nx run-many -t build --projects=core,cli`.
 
-   ```bash
-   node <filelinks-repo>/packages/cli/dist/src/index.js --version
-   node <filelinks-repo>/packages/cli/dist/src/index.js list --cwd /path/to/other/project
-   ```
+### 2. Link (in the **other** project)
 
-   Use **`--cwd`** so the CLI resolves config and git from that project’s root. Use **`--config ./path/to/filelinks.config.ts`** if the config is not in the usual discovery location.
+Paths below assume your clone is a **sibling** named **`filelinks`** (so `../filelinks/packages/...` is correct). Rename or add `..` segments if your layout differs.
 
-3. **Known-good local link flow (recommended):**
+**Direct commands** (equivalent to the two scripts many people keep in the consumer’s `package.json`):
 
-   In the **other** project:
+```bash
+pnpm link ../filelinks/packages/core
+pnpm link ../filelinks/packages/cli
+```
 
-   ```json
-   {
-     "scripts": {
-       "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
-     }
-   }
-   ```
+**Or** add the same thing as scripts in the **other** project’s `package.json` and run them after each rebuild:
 
-   Then run:
+```json
+{
+  "scripts": {
+    "core:link": "pnpm link ../filelinks/packages/core && pnpm install",
+    "cli:link": "pnpm link ../filelinks/packages/cli && pnpm install"
+  }
+}
+```
 
-   ```bash
-   pnpm run cli:link
-   pnpm add -D @filelinks/core@file:../filelinks/packages/core
-   ```
+Then `pnpm run core:link` and `pnpm run cli:link`. Order does not matter; run **both** so core and CLI match the tree you just built.
 
-   Use only this **path link** flow for local development. Do not run `pnpm link filelinks` in the consumer project, because it can replace the working path symlink with a stale global link.
+The root **filelinks** `package.json` also defines **`core:link`** / **`cli:link`** as a **copy-paste template** for that other project — they are not meant to be run from **inside** this monorepo’s root (the relative path assumes you are in a sibling app).
 
-   After each local CLI change, rebuild in this repo and refresh in the other project:
+### 3. Work in the other project
 
-   ```bash
-   # in filelinks repo
-   pnpm exec nx run cli:build
+Run your tests, add **`filelinks.config.ts`**, use **`filelinks list`** (no git staging needed for a quick check), **`filelinks check`** (uses **staged** paths only), etc.
 
-   # in the other project
-   pnpm run cli:link
-   ```
+### Fallback: no `pnpm link`
 
-   To undo the link in the consumer project:
+From the other machine or CI, call the built CLI by path (no install in the other project):
 
-   ```bash
-   pnpm unlink filelinks
-   pnpm install
-   ```
+```bash
+node /path/to/filelinks/packages/cli/dist/src/index.js list --cwd /path/to/other/project
+```
 
-   If linking fails on your machine, use step 2 (`node …/dist/src/index.js`) with no `pnpm link`.
+Use **`--cwd`** for repo root; **`--config ./path/to/filelinks.config.ts`** if discovery is non-standard.
 
-4. **`@filelinks/core` in the consumer project** (required for **`list`**, **`check`**, and **`add`** once a config exists):
+### Undo links (in the **other** project)
 
-   Generated and hand-written configs use **`import { defineLinks } from '@filelinks/core'`**. The CLI loads that file with **jiti** from the **other** project’s tree, so Node resolves **`@filelinks/core`** from the **other** project’s **`node_modules`**, not from inside the linked **`filelinks`** package. Linking or installing **`filelinks` alone is not enough** — you still need **`@filelinks/core`** beside it.
-   - **Published workflow:** `pnpm add -D @filelinks/core` (or npm) in the other project.
-   - **Local monorepo workflow:** build core first (`pnpm exec nx run core:build` from this repo), then either **`pnpm link @filelinks/core`** in the other project (after **`pnpm link`** / **`pnpm link --global`** in **`packages/core`**), or add a **`file:`** dependency on **`packages/core`**. A relative path often works well, e.g. **`pnpm add -D @filelinks/core@file:../filelinks/packages/core`** when the other project sits next to this monorepo (adjust **`..`** segments so they reach the **`filelinks`** repo root). You can use an absolute path instead if you prefer.
+```bash
+pnpm unlink @filelinks/core
+pnpm unlink filelinks
+pnpm install
+```
 
-5. **In the other project**, add a **`filelinks.config.ts`** (by hand or with **`filelinks add`**). **`filelinks list`** is the easiest first check (no git staging). **`filelinks check`** looks at **staged** paths only: stage a file that matches a **trigger**, and adjust **affects** / missing files to test warnings vs errors.
+Avoid **`pnpm link filelinks`** by bare package name in ways that pull a **global** or registry link instead of your path — that can replace a good path symlink and break local dev.
+
+### Without a local clone
+
+From npm after publish: `pnpm add -D @filelinks/core filelinks` in the other project (or equivalent).
 
 ## Git hooks
 

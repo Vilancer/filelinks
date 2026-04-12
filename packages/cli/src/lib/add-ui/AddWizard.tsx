@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
-import { LINK_TYPES, LINK_TYPE_DESCRIPTIONS } from '@filelinks/core';
+import {
+  LINK_TYPES,
+  LINK_TYPE_DESCRIPTIONS,
+  linkTypeForPathKinds,
+} from '@filelinks/core';
 import type { FileLinkEntry, LinkType } from '@filelinks/core';
 
 import { filterPaths } from '../pathCandidates.js';
@@ -130,8 +134,13 @@ export function AddWizard({
   const kindOfCandidate = (value: string): Exclude<PathKind, 'unknown'> =>
     isDirectoryCandidate(value) ? 'dir' : 'file';
 
+  /** Directory if git/meta says so or any listed file lives under `picked/`. */
+  const pickedTriggerIsDirectory = (picked: string): boolean =>
+    directorySet.has(picked) ||
+    candidates.some((c) => c !== picked && c.startsWith(`${picked}/`));
+
   const renderCandidateLabel = (value: string): string =>
-    `${isDirectoryCandidate(value) ? '(dir) ' : '(file)'}${value}`;
+    `${isDirectoryCandidate(value) ? '(dir) ' : '(file) '}${value}`;
 
   const affectKindLock: Exclude<PathKind, 'unknown'> | null =
     affects.length > 0 ? (affects[0]?.kind ?? null) : null;
@@ -159,24 +168,35 @@ export function AddWizard({
       );
   };
 
+  /**
+   * Picker sets `triggerKind`; manual entry leaves `unknown` until we infer from
+   * path lists / glob shape so auto linkType matches dir vs file intent.
+   */
+  const effectiveTriggerKind = (): PathKind => {
+    if (triggerKind !== 'unknown') {
+      return triggerKind;
+    }
+    const raw = trigger.trim();
+    if (!raw) {
+      return 'unknown';
+    }
+    const t = raw.replace(/\/+$/, '');
+    if (directorySet.has(t) || raw.endsWith('/**')) {
+      return 'dir';
+    }
+    if (candidates.includes(t)) {
+      return kindOfCandidate(t);
+    }
+    return 'unknown';
+  };
+
   const resolveAutoLinkType = (): LinkType | null => {
     const k = affectKindLock;
-    if (k === null || triggerKind === 'unknown') {
+    const tk = effectiveTriggerKind();
+    if (k === null || tk === 'unknown') {
       return null;
     }
-    if (triggerKind === 'file' && k === 'file') {
-      return 'file-file';
-    }
-    if (triggerKind === 'file' && k === 'dir') {
-      return 'file-dir';
-    }
-    if (triggerKind === 'dir' && k === 'file') {
-      return 'dir-file';
-    }
-    if (triggerKind === 'dir' && k === 'dir') {
-      return 'dir-dir';
-    }
-    return null;
+    return linkTypeForPathKinds(tk, k);
   };
 
   const pickCurrentAffected = (): void => {
@@ -233,9 +253,9 @@ export function AddWizard({
         if (picked === undefined) {
           return;
         }
-        const isLikelyDir = candidates.some(
-          (c) => c !== picked && c.startsWith(`${picked}/`),
-        );
+        const isLikelyDir = pickedTriggerIsDirectory(picked);
+        setTriggerKind(isLikelyDir ? 'dir' : 'file');
+        setTriggerSourcePath(picked);
         setTrigger(isLikelyDir ? `${picked}/**` : picked);
         setAffectQuery('');
         setAffectPickIndex(0);
@@ -275,8 +295,12 @@ export function AddWizard({
     }
   });
 
-  const runCommit = async (linkType?: LinkType) => {
-    if (severity === null) {
+  const runCommit = async (
+    linkType?: LinkType,
+    commit?: { severity?: 'warn' | 'error' },
+  ) => {
+    const sev = commit?.severity ?? severity;
+    if (sev === null) {
       return;
     }
     const triggerText = trigger.trim();
@@ -287,7 +311,7 @@ export function AddWizard({
     const entry: FileLinkEntry = {
       trigger: triggerText,
       affects: affects.map(({ file, reason }) => ({ file, reason })),
-      severity,
+      severity: sev,
       ...(linkType !== undefined ? { linkType } : {}),
     };
     const code = await onCommit(entry);
@@ -455,9 +479,7 @@ export function AddWizard({
               if (picked === undefined) {
                 return;
               }
-              const isLikelyDir = candidates.some(
-                (c) => c !== picked && c.startsWith(`${picked}/`),
-              );
+              const isLikelyDir = pickedTriggerIsDirectory(picked);
               setTriggerKind(isLikelyDir ? 'dir' : 'file');
               setTriggerSourcePath(picked);
               setTrigger(isLikelyDir ? `${picked}/**` : picked);
@@ -475,9 +497,7 @@ export function AddWizard({
             selectedIndex={triggerPickIndex}
             interactive={false}
             onSelect={(picked) => {
-              const isLikelyDir = candidates.some(
-                (c) => c !== picked && c.startsWith(`${picked}/`),
-              );
+              const isLikelyDir = pickedTriggerIsDirectory(picked);
               setTriggerKind(isLikelyDir ? 'dir' : 'file');
               setTriggerSourcePath(picked);
               setTrigger(isLikelyDir ? `${picked}/**` : picked);
@@ -576,7 +596,7 @@ export function AddWizard({
             setSeverity(v);
             const auto = resolveAutoLinkType();
             if (auto !== null) {
-              void runCommit(auto);
+              void runCommit(auto, { severity: v });
               return;
             }
             setPhase('linkType');
