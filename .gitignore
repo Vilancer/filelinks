@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 vitest.config.*.timestamp*
+
+# Local GSD / planning (not shared)
+.planning/
