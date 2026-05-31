@@ -14,7 +14,7 @@ describe('resolveAgentRunPolicy', () => {
 
   it('uses per-link override over global', () => {
     const global: FileLinkConfig = {
-      agent: { runPolicy: 'trigger-or-affects' },
+      agent: { runPolicy: 'trigger-only' },
     };
     const link: FileLinkEntry = {
       ...entry,
@@ -30,11 +30,9 @@ describe('resolveAgentRunPolicy', () => {
     expect(resolveAgentRunPolicy(global, entry)).toBe('trigger-or-affects');
   });
 
-  it('defaults to trigger-or-affects when both omitted', () => {
-    expect(resolveAgentRunPolicy({}, entry)).toBe('trigger-or-affects');
-    expect(resolveAgentRunPolicy({}, {} as FileLinkEntry)).toBe(
-      'trigger-or-affects',
-    );
+  it('defaults to trigger-only when both omitted', () => {
+    expect(resolveAgentRunPolicy({}, entry)).toBe('trigger-only');
+    expect(resolveAgentRunPolicy({}, {} as FileLinkEntry)).toBe('trigger-only');
   });
 });
 
@@ -55,6 +53,42 @@ function coverageFixture(
 }
 
 describe('shouldRunAgentForLink', () => {
+  it('trigger-only returns false when neither trigger nor affect matched', () => {
+    expect(
+      shouldRunAgentForLink(
+        coverageFixture({
+          triggerMatched: false,
+          affectMatched: false,
+        }),
+        'trigger-only',
+      ),
+    ).toBe(false);
+  });
+
+  it('trigger-only returns true when trigger matched', () => {
+    expect(
+      shouldRunAgentForLink(
+        coverageFixture({
+          triggerMatched: true,
+          affectMatched: false,
+        }),
+        'trigger-only',
+      ),
+    ).toBe(true);
+  });
+
+  it('trigger-only returns false when only affect matched', () => {
+    expect(
+      shouldRunAgentForLink(
+        coverageFixture({
+          triggerMatched: false,
+          affectMatched: true,
+        }),
+        'trigger-only',
+      ),
+    ).toBe(false);
+  });
+
   it('returns false when neither trigger nor affect matched', () => {
     expect(
       shouldRunAgentForLink(
@@ -103,7 +137,7 @@ describe('shouldRunAgentForLink', () => {
     ).toBe(true);
   });
 
-  it('classify + resolve + gate: affect-only staging runs agent', () => {
+  it('classify + resolve + gate: affect-only staging does not run by default', () => {
     const entry: FileLinkEntry = {
       trigger: 'greet.ts',
       linkType: 'file-dir',
@@ -113,8 +147,9 @@ describe('shouldRunAgentForLink', () => {
     const [coverage] = classifyStagedLinks(staged, [entry]);
     expect(coverage).toBeDefined();
     const policy = resolveAgentRunPolicy({}, entry);
-    expect(policy).toBe('trigger-or-affects');
-    expect(shouldRunAgentForLink(coverage, policy)).toBe(true);
+    expect(policy).toBe('trigger-only');
+    expect(shouldRunAgentForLink(coverage, policy)).toBe(false);
+    expect(shouldRunAgentForLink(coverage, 'trigger-or-affects')).toBe(true);
     expect(matchStagedLinks(staged, [entry])).toHaveLength(0);
   });
 });

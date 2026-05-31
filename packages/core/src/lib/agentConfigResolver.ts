@@ -2,6 +2,7 @@ import { AgentConfigError } from './errors';
 import type {
   AgentCloudSettings,
   AgentLocalSettings,
+  AgentModelParameter,
   AgentProviderId,
   AgentRunPolicy,
   AgentRuntime,
@@ -14,6 +15,7 @@ export type ResolvedAgentConfig = {
   provider: AgentProviderId;
   runtime: AgentRuntime;
   model: string;
+  modelParams?: AgentModelParameter[];
   runPolicy?: AgentRunPolicy;
   local?: AgentLocalSettings;
   cloud?: AgentCloudSettings;
@@ -68,6 +70,10 @@ export function validateResolvedAgentConfig(
     provider: merged.provider,
     runtime: merged.runtime,
     model,
+    ...(merged.modelParams !== undefined &&
+      merged.modelParams.length > 0 && {
+        modelParams: [...merged.modelParams],
+      }),
     ...(merged.runPolicy !== undefined && { runPolicy: merged.runPolicy }),
     ...(merged.runtime === 'local' &&
       merged.local !== undefined && { local: merged.local }),

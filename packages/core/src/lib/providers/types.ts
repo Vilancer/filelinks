@@ -1,9 +1,12 @@
 import type { ResolvedAgentConfig } from '../agentConfigResolver';
-import type { AgentProviderId } from '../schema';
+import type { AgentModelParameter, AgentProviderId } from '../schema';
 
 export type AgentModelOption = {
   id: string;
   label?: string;
+  params?: AgentModelParameter[];
+  /** Unique selection key (includes variant params when present). */
+  key: string;
 };
 
 export type AgentProviderContext = {

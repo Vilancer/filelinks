@@ -58,7 +58,33 @@ describe('cursorAgentProvider', () => {
     vi.clearAllMocks();
     delete process.env['CURSOR_API_KEY'];
 
-    mockModelsList.mockResolvedValue([{ id: 'composer-2.5', displayName: 'Composer 2.5' }]);
+    mockModelsList.mockResolvedValue([
+      {
+        id: 'composer-2.5',
+        displayName: 'Composer 2.5',
+        parameters: [
+          {
+            id: 'fast',
+            displayName: 'Fast',
+            values: [
+              { value: 'false' },
+              { value: 'true', displayName: 'Fast' },
+            ],
+          },
+        ],
+        variants: [
+          {
+            displayName: 'Composer 2.5',
+            params: [{ id: 'fast', value: 'true' }],
+            isDefault: true,
+          },
+          {
+            displayName: 'Composer 2.5',
+            params: [{ id: 'fast', value: 'false' }],
+          },
+        ],
+      },
+    ]);
     mockWait.mockResolvedValue({
       id: 'run-1',
       status: 'finished',
@@ -87,15 +113,38 @@ describe('cursorAgentProvider', () => {
       process.env['CURSOR_API_KEY'] = 'test-key';
       const models = await cursorAgentProvider.listModels({});
       expect(mockModelsList).toHaveBeenCalledWith({ apiKey: 'test-key' });
-      expect(models).toEqual([
-        { id: 'composer-2.5', label: 'Composer 2.5' },
-      ]);
+      expect(models).toHaveLength(2);
+      expect(models.some((m) => m.label === 'Composer 2.5 (default)')).toBe(
+        true,
+      );
+      expect(models.some((m) => m.label === 'Composer 2.5 (Standard)')).toBe(
+        true,
+      );
     });
   });
 
   describe('run', () => {
     beforeEach(() => {
       process.env['CURSOR_API_KEY'] = 'test-key';
+    });
+
+    it('passes model params to Agent.create when configured', async () => {
+      await cursorAgentProvider.run({
+        prompt: 'check sync',
+        config: {
+          ...localConfig,
+          modelParams: [{ id: 'fast', value: 'true' }],
+        },
+      });
+
+      expect(mockAgentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: {
+            id: 'composer-2.5',
+            params: [{ id: 'fast', value: 'true' }],
+          },
+        }),
+      );
     });
 
     it('passes local cwd and settingSources for local runtime', async () => {

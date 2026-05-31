@@ -13,7 +13,10 @@ export const PromptConfigSchema = Schema.Struct({
   maxTokens: Schema.optional(Schema.Number),
 });
 
-export const AgentRunPolicySchema = Schema.Literal('trigger-or-affects');
+export const AgentRunPolicySchema = Schema.Literal(
+  'trigger-only',
+  'trigger-or-affects',
+);
 
 export const AgentProviderIdSchema = Schema.Literal('cursor');
 
@@ -27,11 +30,17 @@ export const AgentCloudSettingsSchema = Schema.Struct({
   repos: Schema.Array(Schema.String),
 });
 
+export const AgentModelParameterSchema = Schema.Struct({
+  id: Schema.String,
+  value: Schema.String,
+});
+
 export const AgentSettingsSchema = Schema.Struct({
   runPolicy: Schema.optional(AgentRunPolicySchema),
   provider: Schema.optional(AgentProviderIdSchema),
   runtime: Schema.optional(AgentRuntimeSchema),
   model: Schema.optional(Schema.String),
+  modelParams: Schema.optional(Schema.Array(AgentModelParameterSchema)),
   local: Schema.optional(AgentLocalSettingsSchema),
   cloud: Schema.optional(AgentCloudSettingsSchema),
 });
@@ -71,6 +80,9 @@ export type AgentLocalSettings = Schema.Schema.Type<
 >;
 export type AgentCloudSettings = Schema.Schema.Type<
   typeof AgentCloudSettingsSchema
+>;
+export type AgentModelParameter = Schema.Schema.Type<
+  typeof AgentModelParameterSchema
 >;
 export type AgentSettings = Schema.Schema.Type<typeof AgentSettingsSchema>;
 export type FileLinkConfig = Schema.Schema.Type<typeof FileLinkConfigSchema>;

@@ -8,9 +8,9 @@ import {
   AgentStartupError,
   FilelinksError,
 } from '../errors';
+import { expandCursorModelOptions } from './cursorModelOptions.js';
 import type { AgentProvider } from './types';
 import type {
-  AgentModelOption,
   AgentProviderContext,
   AgentRunInput,
   AgentRunResult,
@@ -42,23 +42,37 @@ function buildAgentCreateOptions(
 ): AgentOptions {
   const options: AgentOptions = {
     apiKey,
-    model: { id: config.model },
+    model: {
+      id: config.model,
+      ...(config.modelParams?.length
+        ? { params: [...config.modelParams] }
+        : {}),
+    },
   };
 
   if (config.runtime === 'local') {
+    const local = config.local;
+    if (!local) {
+      throw new Error('agent.local is required for local runtime');
+    }
     return {
       ...options,
       local: {
-        cwd: config.local!.cwd,
+        cwd: local.cwd,
         settingSources: [],
       },
     };
   }
 
+  const cloud = config.cloud;
+  if (!cloud) {
+    throw new Error('agent.cloud is required for cloud runtime');
+  }
+
   return {
     ...options,
     cloud: {
-      repos: toCloudRepos([...config.cloud!.repos]),
+      repos: toCloudRepos([...cloud.repos]),
     },
   };
 }
@@ -78,13 +92,10 @@ export const cursorAgentProvider: AgentProvider = {
     resolveApiKey(ctx);
   },
 
-  async listModels(ctx: AgentProviderContext): Promise<AgentModelOption[]> {
+  async listModels(ctx: AgentProviderContext) {
     const apiKey = resolveApiKey(ctx);
     const models = await Cursor.models.list({ apiKey });
-    return models.map((model) => ({
-      id: model.id,
-      ...(model.displayName !== undefined && { label: model.displayName }),
-    }));
+    return expandCursorModelOptions(models);
   },
 
   async run(input: AgentRunInput): Promise<AgentRunResult> {

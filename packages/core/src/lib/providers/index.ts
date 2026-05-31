@@ -22,10 +22,13 @@ export type {
 };
 
 export {
-  getAgentProvider,
-  listAgentProviderIds,
-  registerAgentProvider,
-};
+  expandCursorModelOptions,
+  modelOptionKey,
+  parseModelOptionKey,
+  sortAgentModelOptions,
+} from './cursorModelOptions.js';
+
+export { getAgentProvider, listAgentProviderIds, registerAgentProvider };
 
 export async function listAgentModels(
   providerId: AgentProviderId,

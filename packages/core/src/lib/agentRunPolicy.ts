@@ -6,6 +6,8 @@ export function shouldRunAgentForLink(
   policy: AgentRunPolicy,
 ): boolean {
   switch (policy) {
+    case 'trigger-only':
+      return coverage.triggerMatched;
     case 'trigger-or-affects':
       return coverage.triggerMatched || coverage.affectMatched;
     default: {
@@ -20,8 +22,6 @@ export function resolveAgentRunPolicy(
   link: FileLinkEntry,
 ): AgentRunPolicy {
   return (
-    link.agent?.runPolicy ??
-    globalConfig.agent?.runPolicy ??
-    'trigger-or-affects'
+    link.agent?.runPolicy ?? globalConfig.agent?.runPolicy ?? 'trigger-only'
   );
 }

@@ -20,7 +20,7 @@ Planning and deep maps live under **`.planning/`** (roadmap, requirements, `code
 | **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                                                     |
 | **Prettier**                                                                                                            | **`.prettierrc`**                                                                                                                     |
 | **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                                                               |
-| **AI agents (v1.1)** — `check --run-agents`, config, smoke                                                                 | **README.md** → *Running agents (v1.1)*; this file → *AI agents (v1.1)* below                                                          |
+| **AI agents (v1.1)** — `check --run-agents`, config, smoke                                                              | **README.md** → _Running agents (v1.1)_; this file → _AI agents (v1.1)_ below                                                         |
 
 **Quick conventions:** Public API from each package’s **`src/index.ts`**. Library code under **`packages/<name>/src/lib/`** with specs as **`*.spec.ts`** beside sources. Build output paths are per-package **`project.json`** → **`targets.build.options.outputPath`** (CLI: **`packages/cli/dist/`**, core: **`packages/core/dist/`**). If **`ARCHITECTURE.md`** or **`TESTING.md`** disagree with **`project.json`** or this file, treat the repo config and **`AGENTS.md`** as current.
 
@@ -118,10 +118,17 @@ To skip hooks in an emergency: `git commit --no-verify` (use sparingly).
 
 - Default export from **`filelinks.config.ts`**: `export default defineLinks([...], { ... })`.
 - Optional **`linkType`** on each link: `file-file`, `dir-dir`, `file-dir`, or `dir-file` (see `packages/core/src/lib/linkType.ts`).
+- `filelinks add` can now capture optional agent config interactively:
+  - global defaults (`config.agent`) and
+  - per-link overrides (`entry.agent`)
+    with explicit runtime selection (`local` + `cwd`, or `cloud` + `repos`).
+- `filelinks add` can also capture model and prompt settings:
+  - model picker (provider `listModels` + fallback),
+  - global/per-link `prompt` (`systemPrompt`, optional `temperature`, optional `maxTokens`).
 
 ## AI agents (v1.1)
 
-User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **README.md** → *Running agents (v1.1)*.
+User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **README.md** → _Running agents (v1.1)_.
 
 ### Manual smoke (real Cursor)
 
@@ -134,6 +141,9 @@ User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **REA
    ```
 
    Use **`--json --run-agents`** to inspect the optional **`agentRuns`** array.
+
+4. If using `filelinks add`, verify generated config includes the expected `agent` blocks (global and/or per-link) before smoke runs.
+5. If testing model/prompt wizard paths, verify generated `agent.model` and `prompt` fields in both global and per-link scopes.
 
 ### CI and unit tests
 

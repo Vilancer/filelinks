@@ -13,8 +13,7 @@ import {
   resolvePrompt,
   shouldRunAgentForLink,
 } from '@filelinks/core';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { resolveCursorApiKey } from './cursorApiKey.js';
 
 import type { AgentRunSummaryJson, CheckViolationJson } from './formatters.js';
 import { printCheckJson } from './formatters.js';
@@ -29,72 +28,8 @@ export type RunCheckOpts = {
   cursorApiKey?: string;
 };
 
-const CURSOR_API_KEY_ENV_NAME = 'CURSOR_API_KEY';
 const CURSOR_API_KEY_MISSING_MESSAGE =
   'Cursor API key is required to run agents. Provide it via --cursor-api-key, CURSOR_API_KEY, or CURSOR_API_KEY in .env/.env.local at the --cwd repo root.';
-
-function unwrapEnvValue(rawValue: string): string {
-  const value = rawValue.trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1).trim();
-  }
-  const hashIndex = value.indexOf('#');
-  if (hashIndex === -1) {
-    return value.trim();
-  }
-  return value.slice(0, hashIndex).trim();
-}
-
-function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
-  if (!existsSync(filePath)) {
-    return undefined;
-  }
-
-  const text = readFileSync(filePath, 'utf8');
-  const lines = text.split(/\r?\n/u);
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.length === 0 || trimmed.startsWith('#')) {
-      continue;
-    }
-    const match = trimmed.match(/^(?:export\s+)?CURSOR_API_KEY\s*=\s*(.*)$/u);
-    if (!match) {
-      continue;
-    }
-
-    const parsed = unwrapEnvValue(match[1] ?? '');
-    if (parsed.length > 0) {
-      return parsed;
-    }
-  }
-
-  return undefined;
-}
-
-function resolveCursorApiKey(opts: RunCheckOpts): string | undefined {
-  const flagApiKey = opts.cursorApiKey?.trim();
-  if (flagApiKey) {
-    return flagApiKey;
-  }
-
-  const envApiKey = process.env[CURSOR_API_KEY_ENV_NAME]?.trim();
-  if (envApiKey) {
-    return envApiKey;
-  }
-
-  const envLocalApiKey = readCursorApiKeyFromEnvFile(
-    join(opts.cwd, '.env.local'),
-  );
-  if (envLocalApiKey) {
-    return envLocalApiKey;
-  }
-
-  return readCursorApiKeyFromEnvFile(join(opts.cwd, '.env'));
-}
 
 function effectiveSeverity(entry: {
   severity?: 'warn' | 'error';
@@ -161,7 +96,10 @@ export async function runCheck(opts: RunCheckOpts): Promise<number> {
       const policy = resolveAgentRunPolicy(config, cov.entry);
       return shouldRunAgentForLink(cov, policy);
     });
-    const cursorApiKey = resolveCursorApiKey(opts);
+    const cursorApiKey = resolveCursorApiKey({
+      cwd: opts.cwd,
+      cursorApiKey: opts.cursorApiKey,
+    });
 
     for (const cov of eligible) {
       if (!opts.json) {

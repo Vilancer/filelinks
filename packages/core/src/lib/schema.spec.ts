@@ -36,19 +36,19 @@ describe('defineLinks', () => {
     ).toThrow();
   });
 
-  it('accepts trigger-or-affects at global and per-link levels', () => {
+  it('accepts trigger-only and trigger-or-affects at agent levels', () => {
     const { links, config } = defineLinks(
       [
         {
           trigger: 'a.ts',
           affects: [{ file: 'b.ts', reason: 'sync' }],
-          agent: { runPolicy: 'trigger-or-affects' },
+          agent: { runPolicy: 'trigger-only' },
         },
       ],
       { agent: { runPolicy: 'trigger-or-affects' } },
     );
     expect(config.agent?.runPolicy).toBe('trigger-or-affects');
-    expect(links[0]?.agent?.runPolicy).toBe('trigger-or-affects');
+    expect(links[0]?.agent?.runPolicy).toBe('trigger-only');
   });
 
   it('rejects invalid agent runPolicy at decode', () => {
@@ -57,14 +57,14 @@ describe('defineLinks', () => {
         {
           trigger: 'a.ts',
           affects: [],
-          agent: { runPolicy: 'trigger-only' as 'trigger-or-affects' },
+          agent: { runPolicy: 'always' as 'trigger-or-affects' },
         },
       ]),
     ).toThrow();
 
     expect(() =>
       defineLinks([], {
-        agent: { runPolicy: 'always' as 'trigger-or-affects' },
+        agent: { runPolicy: 'never' as 'trigger-or-affects' },
       }),
     ).toThrow();
   });

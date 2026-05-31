@@ -8,7 +8,7 @@ function mockProvider(id: AgentProviderId): AgentProvider {
   return {
     id,
     validateCredentials: () => undefined,
-    listModels: async () => [{ id: 'test-model' }],
+    listModels: async () => [{ id: 'test-model', key: 'test-model' }],
     run: async () => ({ status: 'finished', runId: 'run-1' }),
   };
 }

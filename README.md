@@ -68,7 +68,9 @@ export default defineLinks(
   [
     {
       trigger: 'apps/api/src/routes/user.ts',
-      affects: [{ file: 'apps/api/docs/openapi.yaml', reason: 'Keep OpenAPI in sync' }],
+      affects: [
+        { file: 'apps/api/docs/openapi.yaml', reason: 'Keep OpenAPI in sync' },
+      ],
       agent: {
         runPolicy: 'trigger-or-affects',
         provider: 'cursor',
@@ -113,7 +115,7 @@ filelinks list --json
 
 ### `filelinks add`
 
-Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then **create or rewrite** `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
+Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with runtime selection (**local** `cwd` or **cloud** `repos`). The wizard also supports model selection (live provider `listModels` when available, with fallback options) and optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`). Finally, create or rewrite `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
 
 ```bash
 filelinks add
