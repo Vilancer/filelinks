@@ -20,6 +20,7 @@ Planning and deep maps live under **`.planning/`** (roadmap, requirements, `code
 | **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                                                     |
 | **Prettier**                                                                                                            | **`.prettierrc`**                                                                                                                     |
 | **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                                                               |
+| **AI agents (v1.1)** — `check --run-agents`, config, smoke                                                                 | **README.md** → *Running agents (v1.1)*; this file → *AI agents (v1.1)* below                                                          |
 
 **Quick conventions:** Public API from each package’s **`src/index.ts`**. Library code under **`packages/<name>/src/lib/`** with specs as **`*.spec.ts`** beside sources. Build output paths are per-package **`project.json`** → **`targets.build.options.outputPath`** (CLI: **`packages/cli/dist/`**, core: **`packages/core/dist/`**). If **`ARCHITECTURE.md`** or **`TESTING.md`** disagree with **`project.json`** or this file, treat the repo config and **`AGENTS.md`** as current.
 
@@ -117,3 +118,33 @@ To skip hooks in an emergency: `git commit --no-verify` (use sparingly).
 
 - Default export from **`filelinks.config.ts`**: `export default defineLinks([...], { ... })`.
 - Optional **`linkType`** on each link: `file-file`, `dir-dir`, `file-dir`, or `dir-file` (see `packages/core/src/lib/linkType.ts`).
+
+## AI agents (v1.1)
+
+User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **README.md** → *Running agents (v1.1)*.
+
+### Manual smoke (real Cursor)
+
+1. Export **`CURSOR_API_KEY`** (Cursor dashboard → API keys).
+2. In a repo with **`filelinks.config.ts`**, set global or per-link **`agent`** with **`provider: 'cursor'`**, **`runtime: 'local'`**, and **`local.cwd`** pointing at the repo you want the agent to use.
+3. Stage paths that satisfy **`trigger-or-affects`** for at least one link, then run:
+
+   ```bash
+   filelinks check --run-agents
+   ```
+
+   Use **`--json --run-agents`** to inspect the optional **`agentRuns`** array.
+
+### CI and unit tests
+
+CI and pre-commit **do not** call the live Cursor API. Agent behavior is covered with **mocks**:
+
+- **`packages/cli/src/lib/cli.e2e.spec.ts`** — `[e2e] check --run-agents` wires the flag through Commander.
+- **`packages/cli/src/lib/runCheck.spec.ts`** — orchestration and JSON **`agentRuns`**.
+- **`packages/core/src/lib/providers/cursorProvider.spec.ts`** — provider errors and SDK boundary (mocked).
+
+Run **`pnpm test`** and **`pnpm run cli:test:e2e`** from the repo root after CLI/core changes.
+
+### Testing the CLI in another project
+
+When validating **`--run-agents`** against an external app, use the **linked-consumer workflow** above (build **core** + **cli** in this repo, then **`pnpm link`** both packages in the other project). Rebuild and re-link after changes; do not rely on a stale global **`filelinks`** install.
