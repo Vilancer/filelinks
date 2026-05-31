@@ -7,3 +7,4 @@ export * from './lib/errors';
 export * from './lib/handleError';
 export * from './lib/gitReader';
 export * from './lib/linkMatcher';
+export * from './lib/stagedClassifier';

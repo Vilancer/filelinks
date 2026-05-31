@@ -37,7 +37,7 @@ function directoryRootForDirLevelAffect(affectGlob: string): string | null {
   return trimmed;
 }
 
-function stagedCoversAffected(
+export function stagedCoversAffected(
   stagedPaths: string[],
   affectFile: string,
   linkType: FileLinkEntry['linkType'],
