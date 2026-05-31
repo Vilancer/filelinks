@@ -15,8 +15,25 @@ export const PromptConfigSchema = Schema.Struct({
 
 export const AgentRunPolicySchema = Schema.Literal('trigger-or-affects');
 
+export const AgentProviderIdSchema = Schema.Literal('cursor');
+
+export const AgentRuntimeSchema = Schema.Literal('local', 'cloud');
+
+export const AgentLocalSettingsSchema = Schema.Struct({
+  cwd: Schema.String,
+});
+
+export const AgentCloudSettingsSchema = Schema.Struct({
+  repos: Schema.Array(Schema.String),
+});
+
 export const AgentSettingsSchema = Schema.Struct({
   runPolicy: Schema.optional(AgentRunPolicySchema),
+  provider: Schema.optional(AgentProviderIdSchema),
+  runtime: Schema.optional(AgentRuntimeSchema),
+  model: Schema.optional(Schema.String),
+  local: Schema.optional(AgentLocalSettingsSchema),
+  cloud: Schema.optional(AgentCloudSettingsSchema),
 });
 
 export const AffectedFileSchema = Schema.Struct({
@@ -47,6 +64,14 @@ export const FileLinksFileSchema = Schema.Struct({
 
 export type PromptConfig = Schema.Schema.Type<typeof PromptConfigSchema>;
 export type AgentRunPolicy = Schema.Schema.Type<typeof AgentRunPolicySchema>;
+export type AgentProviderId = Schema.Schema.Type<typeof AgentProviderIdSchema>;
+export type AgentRuntime = Schema.Schema.Type<typeof AgentRuntimeSchema>;
+export type AgentLocalSettings = Schema.Schema.Type<
+  typeof AgentLocalSettingsSchema
+>;
+export type AgentCloudSettings = Schema.Schema.Type<
+  typeof AgentCloudSettingsSchema
+>;
 export type AgentSettings = Schema.Schema.Type<typeof AgentSettingsSchema>;
 export type FileLinkConfig = Schema.Schema.Type<typeof FileLinkConfigSchema>;
 export type AffectedFile = Schema.Schema.Type<typeof AffectedFileSchema>;
