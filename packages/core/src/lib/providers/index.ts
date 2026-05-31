@@ -1,9 +1,9 @@
 import type { AgentProviderId } from '../schema';
+import { cursorAgentProvider } from './cursorProvider';
 import {
   getAgentProvider,
   listAgentProviderIds,
   registerAgentProvider,
-  registerBuiltInProviders,
 } from './registry';
 import type {
   AgentModelOption,
@@ -25,7 +25,6 @@ export {
   getAgentProvider,
   listAgentProviderIds,
   registerAgentProvider,
-  registerBuiltInProviders,
 };
 
 export async function listAgentModels(
@@ -34,3 +33,9 @@ export async function listAgentModels(
 ): Promise<AgentModelOption[]> {
   return getAgentProvider(providerId).listModels(ctx ?? {});
 }
+
+export function registerBuiltInProviders(): void {
+  registerAgentProvider(cursorAgentProvider);
+}
+
+registerBuiltInProviders();

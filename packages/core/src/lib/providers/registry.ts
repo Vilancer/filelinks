@@ -20,7 +20,3 @@ export function listAgentProviderIds(): AgentProviderId[] {
   return [...providers.keys()];
 }
 
-/** No-op until plan 03 registers the Cursor provider. */
-export function registerBuiltInProviders(): void {
-  // stub — cursor provider registered in 06-03
-}
