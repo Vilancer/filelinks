@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const mockRun = vi.hoisted(() => vi.fn());
 
@@ -112,6 +115,7 @@ describe('[e2e] check --run-agents', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env['CURSOR_API_KEY'] = 'env-default-key';
     process.exitCode = undefined;
     mockRun.mockResolvedValue({ runId: 'e2e-run' });
     mockCore.getAgentProvider.mockReturnValue({ run: mockRun });
@@ -145,8 +149,14 @@ describe('[e2e] check --run-agents', () => {
   });
 
   afterEach(() => {
+    delete process.env['CURSOR_API_KEY'];
+    for (const dir of tempDirs) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    tempDirs = [];
     vi.restoreAllMocks();
   });
+  let tempDirs: string[] = [];
 
   it('wires --run-agents through check into agent provider', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -159,11 +169,18 @@ describe('[e2e] check --run-agents', () => {
       '/tmp/agent-fixture',
       'check',
       '--run-agents',
+      '--cursor-api-key',
+      'flag-e2e-key',
     ]);
 
     expect(mockCore.classifyStagedLinks).toHaveBeenCalled();
     expect(mockCore.getAgentProvider).toHaveBeenCalled();
     expect(mockRun).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'flag-e2e-key' },
+      }),
+    );
     expect(process.exitCode).toBe(0);
 
     log.mockRestore();
@@ -182,6 +199,8 @@ describe('[e2e] check --run-agents', () => {
       '--json',
       'check',
       '--run-agents',
+      '--cursor-api-key',
+      'flag-e2e-key',
     ]);
 
     expect(process.exitCode).toBe(0);
@@ -195,6 +214,88 @@ describe('[e2e] check --run-agents', () => {
         expect.objectContaining({ trigger: 'src/**/*.ts' }),
       ]),
     );
+
+    log.mockRestore();
+    err.mockRestore();
+  });
+
+  it('uses CURSOR_API_KEY when --cursor-api-key is absent', async () => {
+    process.env['CURSOR_API_KEY'] = 'env-e2e-key';
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await runCli([
+      'node',
+      'filelinks',
+      '--cwd',
+      '/tmp/agent-fixture',
+      'check',
+      '--run-agents',
+    ]);
+
+    expect(process.exitCode).toBe(0);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'env-e2e-key' },
+      }),
+    );
+
+    log.mockRestore();
+    err.mockRestore();
+  });
+
+  it('uses .env.local when flag and env are absent', async () => {
+    delete process.env['CURSOR_API_KEY'];
+    const tempDir = mkdtempSync(join(tmpdir(), 'filelinks-cli-e2e-'));
+    tempDirs.push(tempDir);
+    writeFileSync(join(tempDir, '.env.local'), 'CURSOR_API_KEY=dotenv-local\n');
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await runCli([
+      'node',
+      'filelinks',
+      '--cwd',
+      tempDir,
+      'check',
+      '--run-agents',
+    ]);
+
+    expect(process.exitCode).toBe(0);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'dotenv-local' },
+      }),
+    );
+
+    log.mockRestore();
+    err.mockRestore();
+  });
+
+  it('prints missing-key guidance for check --run-agents', async () => {
+    delete process.env['CURSOR_API_KEY'];
+    const tempDir = mkdtempSync(join(tmpdir(), 'filelinks-cli-e2e-'));
+    tempDirs.push(tempDir);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await runCli([
+      'node',
+      'filelinks',
+      '--cwd',
+      tempDir,
+      'check',
+      '--run-agents',
+    ]);
+
+    expect(process.exitCode).toBe(1);
+    expect(mockRun).not.toHaveBeenCalled();
+    expect(err).toHaveBeenCalledWith(
+      expect.stringContaining('--cursor-api-key'),
+    );
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('CURSOR_API_KEY'));
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('.env'));
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('--cwd'));
 
     log.mockRestore();
     err.mockRestore();

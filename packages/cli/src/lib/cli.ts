@@ -75,19 +75,24 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .command('check')
     .description('Check staged files against declared links')
+    .option('--run-agents', 'Run agents for policy-eligible links after check')
     .option(
-      '--run-agents',
-      'Run agents for policy-eligible links after check',
+      '--cursor-api-key <key>',
+      'Cursor API key override for --run-agents',
     )
     .action(async function (this: Command) {
       try {
         const g = globalOpts(this);
-        const opts = this.opts() as { runAgents?: boolean };
+        const opts = this.opts() as {
+          runAgents?: boolean;
+          cursorApiKey?: string;
+        };
         process.exitCode = await runCheck({
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
           runAgents: Boolean(opts.runAgents),
+          cursorApiKey: opts.cursorApiKey,
         });
       } catch (e: unknown) {
         const h = normalizeError(e);

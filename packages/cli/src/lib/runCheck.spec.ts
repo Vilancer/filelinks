@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const mockRun = vi.fn();
 
@@ -32,9 +35,11 @@ describe('runCheck agent orchestration', () => {
     trigger: 'apps/**/*.ts',
     affects: [{ file: 'docs/x.md', reason: 'sync' }],
   };
+  let tempDirs: string[] = [];
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env['CURSOR_API_KEY'] = 'env-default-key';
     mockRun.mockResolvedValue({ status: 'finished', runId: 'run-1' });
     mockCore.getAgentProvider.mockReturnValue({ run: mockRun });
     mockCore.loadFileLinksConfig.mockReturnValue({
@@ -55,6 +60,11 @@ describe('runCheck agent orchestration', () => {
   });
 
   afterEach(() => {
+    delete process.env['CURSOR_API_KEY'];
+    for (const dir of tempDirs) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    tempDirs = [];
     vi.restoreAllMocks();
   });
 
@@ -145,6 +155,137 @@ describe('runCheck agent orchestration', () => {
 
     err.mockRestore();
     log.mockRestore();
+  });
+
+  it('uses --cursor-api-key over CURSOR_API_KEY', async () => {
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+
+    const code = await runCheck({
+      cwd: '/repo',
+      json: false,
+      runAgents: true,
+      cursorApiKey: 'flag-key',
+    });
+
+    expect(code).toBe(0);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'flag-key' },
+      }),
+    );
+  });
+
+  it('uses CURSOR_API_KEY when --cursor-api-key is missing', async () => {
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+    process.env['CURSOR_API_KEY'] = 'env-key';
+
+    const code = await runCheck({
+      cwd: '/repo',
+      json: false,
+      runAgents: true,
+    });
+
+    expect(code).toBe(0);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'env-key' },
+      }),
+    );
+  });
+
+  it('uses .env when flag and env are missing', async () => {
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+    delete process.env['CURSOR_API_KEY'];
+    const tempDir = mkdtempSync(join(tmpdir(), 'filelinks-runcheck-'));
+    tempDirs.push(tempDir);
+    writeFileSync(join(tempDir, '.env'), 'CURSOR_API_KEY=dotenv-key\n');
+
+    const code = await runCheck({
+      cwd: tempDir,
+      json: false,
+      runAgents: true,
+    });
+
+    expect(code).toBe(0);
+    expect(mockRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ctx: { apiKey: 'dotenv-key' },
+      }),
+    );
+  });
+
+  it('prints actionable diagnostics when key is unresolved', async () => {
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+    delete process.env['CURSOR_API_KEY'];
+    const tempDir = mkdtempSync(join(tmpdir(), 'filelinks-runcheck-'));
+    tempDirs.push(tempDir);
+
+    const errorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const code = await runCheck({
+      cwd: tempDir,
+      json: false,
+      runAgents: true,
+    });
+
+    expect(code).toBe(1);
+    expect(mockRun).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('--cursor-api-key'),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('CURSOR_API_KEY'),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('.env'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('--cwd'));
+
+    errorSpy.mockRestore();
   });
 
   it('JSON output includes agentRuns when runAgents true', async () => {
