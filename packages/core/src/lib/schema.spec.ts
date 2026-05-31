@@ -68,4 +68,56 @@ describe('defineLinks', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts agent execution fields at global and per-link levels', () => {
+    const { links, config } = defineLinks(
+      [
+        {
+          trigger: 'a.ts',
+          affects: [{ file: 'b.ts', reason: 'sync' }],
+          agent: {
+            provider: 'cursor',
+            runtime: 'local',
+            local: { cwd: '.' },
+          },
+        },
+      ],
+      {
+        agent: {
+          provider: 'cursor',
+          runtime: 'cloud',
+          cloud: { repos: ['org/repo'] },
+        },
+      },
+    );
+    expect(config.agent?.provider).toBe('cursor');
+    expect(config.agent?.runtime).toBe('cloud');
+    expect(links[0]?.agent?.provider).toBe('cursor');
+    expect(links[0]?.agent?.runtime).toBe('local');
+    expect(links[0]?.agent?.local?.cwd).toBe('.');
+  });
+
+  it('rejects invalid agent provider at decode', () => {
+    expect(() =>
+      defineLinks([
+        {
+          trigger: 'a.ts',
+          affects: [],
+          agent: { provider: 'openai' as 'cursor' },
+        },
+      ]),
+    ).toThrow();
+  });
+
+  it('rejects invalid agent runtime at decode', () => {
+    expect(() =>
+      defineLinks([
+        {
+          trigger: 'a.ts',
+          affects: [],
+          agent: { runtime: 'hybrid' as 'local' },
+        },
+      ]),
+    ).toThrow();
+  });
 });
