@@ -3,6 +3,7 @@ export * from './lib/linkType';
 export * from './lib/promptResolver';
 export * from './lib/agentRunPolicy';
 export * from './lib/agentConfigResolver';
+export * from './lib/providers';
 export * from './lib/configLoader';
 export * from './lib/errors';
 export * from './lib/handleError';
