@@ -75,13 +75,19 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .command('check')
     .description('Check staged files against declared links')
+    .option(
+      '--run-agents',
+      'Run agents for policy-eligible links after check',
+    )
     .action(async function (this: Command) {
       try {
         const g = globalOpts(this);
+        const opts = this.opts() as { runAgents?: boolean };
         process.exitCode = await runCheck({
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
+          runAgents: Boolean(opts.runAgents),
         });
       } catch (e: unknown) {
         const h = normalizeError(e);
