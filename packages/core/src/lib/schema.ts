@@ -13,6 +13,12 @@ export const PromptConfigSchema = Schema.Struct({
   maxTokens: Schema.optional(Schema.Number),
 });
 
+export const AgentRunPolicySchema = Schema.Literal('trigger-or-affects');
+
+export const AgentSettingsSchema = Schema.Struct({
+  runPolicy: Schema.optional(AgentRunPolicySchema),
+});
+
 export const AffectedFileSchema = Schema.Struct({
   file: Schema.String,
   reason: Schema.String,
@@ -26,10 +32,12 @@ export const FileLinkEntrySchema = Schema.Struct({
   linkType: Schema.optional(LinkTypeSchema),
   severity: Schema.optional(SeveritySchema),
   prompt: Schema.optional(PromptConfigSchema),
+  agent: Schema.optional(AgentSettingsSchema),
 });
 
 export const FileLinkConfigSchema = Schema.Struct({
   prompt: Schema.optional(PromptConfigSchema),
+  agent: Schema.optional(AgentSettingsSchema),
 });
 
 export const FileLinksFileSchema = Schema.Struct({
@@ -38,6 +46,8 @@ export const FileLinksFileSchema = Schema.Struct({
 });
 
 export type PromptConfig = Schema.Schema.Type<typeof PromptConfigSchema>;
+export type AgentRunPolicy = Schema.Schema.Type<typeof AgentRunPolicySchema>;
+export type AgentSettings = Schema.Schema.Type<typeof AgentSettingsSchema>;
 export type FileLinkConfig = Schema.Schema.Type<typeof FileLinkConfigSchema>;
 export type AffectedFile = Schema.Schema.Type<typeof AffectedFileSchema>;
 export type LinkType = Schema.Schema.Type<typeof LinkTypeSchema>;
