@@ -146,4 +146,40 @@ describe('runCheck agent orchestration', () => {
     err.mockRestore();
     log.mockRestore();
   });
+
+  it('JSON output includes agentRuns when runAgents true', async () => {
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const code = await runCheck({
+      cwd: '/repo',
+      json: true,
+      runAgents: true,
+    });
+
+    expect(code).toBe(0);
+    expect(log).toHaveBeenCalledTimes(1);
+    const payload = JSON.parse(String(log.mock.calls[0]?.[0])) as {
+      violations: unknown[];
+      agentRuns?: { trigger: string; status: string }[];
+    };
+    expect(payload.violations).toEqual([]);
+    expect(payload.agentRuns).toEqual([
+      { trigger: 'apps/**/*.ts', status: 'ok', runId: 'run-1' },
+    ]);
+
+    log.mockRestore();
+  });
 });
