@@ -56,7 +56,7 @@ function globalOpts(cmd: Command): {
   };
 }
 
-export function runCli(argv: string[]): void {
+export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
 
   program
@@ -75,10 +75,10 @@ export function runCli(argv: string[]): void {
   program
     .command('check')
     .description('Check staged files against declared links')
-    .action(function (this: Command) {
+    .action(async function (this: Command) {
       try {
         const g = globalOpts(this);
-        process.exitCode = runCheck({
+        process.exitCode = await runCheck({
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
@@ -128,7 +128,7 @@ export function runCli(argv: string[]): void {
     });
 
   try {
-    program.parse(argv);
+    await program.parseAsync(argv);
   } catch (e: unknown) {
     const h = normalizeError(e);
     console.error(h.message);

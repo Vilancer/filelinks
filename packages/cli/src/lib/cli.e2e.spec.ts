@@ -34,11 +34,11 @@ describe('[e2e] cli command wiring', () => {
     vi.restoreAllMocks();
   });
 
-  it('passes global options to check and exits 0', () => {
+  it('passes global options to check and exits 0', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    runCli([
+    await runCli([
       'node',
       'filelinks',
       '--cwd',

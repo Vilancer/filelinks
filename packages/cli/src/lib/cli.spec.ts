@@ -28,7 +28,7 @@ describe('runCheck', () => {
     vi.restoreAllMocks();
   });
 
-  it('exits 0 when severity omitted and only warn-level violations', () => {
+  it('exits 0 when severity omitted and only warn-level violations', async () => {
     mockCore.getStagedFilePaths.mockReturnValue(['apps/foo.ts']);
     mockCore.loadFileLinksConfig.mockReturnValue({
       links: [
@@ -49,14 +49,14 @@ describe('runCheck', () => {
       },
     ]);
 
-    const code = runCheck({
+    const code = await runCheck({
       cwd: '/repo',
       json: false,
     });
     expect(code).toBe(0);
   });
 
-  it('exits 1 when violation has severity error', () => {
+  it('exits 1 when violation has severity error', async () => {
     mockCore.getStagedFilePaths.mockReturnValue(['apps/foo.ts']);
     mockCore.loadFileLinksConfig.mockReturnValue({
       links: [
@@ -79,7 +79,7 @@ describe('runCheck', () => {
       },
     ]);
 
-    const code = runCheck({ cwd: '/repo', json: false });
+    const code = await runCheck({ cwd: '/repo', json: false });
     expect(code).toBe(1);
   });
 });

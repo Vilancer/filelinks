@@ -1,17 +1,28 @@
 import {
+  buildAgentPrompt,
+  classifyStagedLinks,
+  getAgentProvider,
+  getStagedDiffForPaths,
   getStagedFilePaths,
   loadFileLinksConfig,
   matchStagedLinks,
   normalizeError,
+  readAffectedContents,
+  resolveAgentConfig,
+  resolveAgentRunPolicy,
+  resolvePrompt,
+  shouldRunAgentForLink,
 } from '@filelinks/core';
 
-import type { CheckViolationJson } from './formatters.js';
+import type { AgentRunSummaryJson, CheckViolationJson } from './formatters.js';
 import { printCheckJson } from './formatters.js';
 
 export type RunCheckOpts = {
   cwd: string;
   configPath?: string;
   json: boolean;
+  /** When true, run agents after violation reporting (default false). */
+  runAgents?: boolean;
 };
 
 function effectiveSeverity(entry: {
@@ -20,14 +31,16 @@ function effectiveSeverity(entry: {
   return entry.severity ?? 'warn';
 }
 
-export function runCheck(opts: RunCheckOpts): number {
+export async function runCheck(opts: RunCheckOpts): Promise<number> {
   let links;
+  let config;
   try {
     const loaded = loadFileLinksConfig(
       opts.cwd,
       opts.configPath ? { configPath: opts.configPath } : undefined,
     );
     links = loaded.links;
+    config = loaded.config;
   } catch (e: unknown) {
     const h = normalizeError(e);
     console.error(h.message);
@@ -58,9 +71,9 @@ export function runCheck(opts: RunCheckOpts): number {
     }
   }
 
-  if (opts.json) {
-    printCheckJson(violations);
-  } else {
+  const violationExit = violations.some((v) => v.severity === 'error') ? 1 : 0;
+
+  if (!opts.json) {
     for (const v of violations) {
       console.log(
         `[${v.severity}] trigger=${v.trigger} affected=${v.affectedFile} reason=${v.reason}`,
@@ -68,6 +81,59 @@ export function runCheck(opts: RunCheckOpts): number {
     }
   }
 
-  const hasError = violations.some((v) => v.severity === 'error');
-  return hasError ? 1 : 0;
+  const agentRuns: AgentRunSummaryJson[] = [];
+  let agentExit = 0;
+
+  if (opts.runAgents) {
+    const coverageRows = classifyStagedLinks(staged, links);
+    const eligible = coverageRows.filter((cov) => {
+      const policy = resolveAgentRunPolicy(config, cov.entry);
+      return shouldRunAgentForLink(cov, policy);
+    });
+
+    for (const cov of eligible) {
+      if (!opts.json) {
+        console.error(`[agent] trigger=${cov.entry.trigger}`);
+      }
+      try {
+        const agentConfig = resolveAgentConfig(config, cov.entry);
+        const provider = getAgentProvider(agentConfig.provider);
+        const prompt = buildAgentPrompt({
+          prompt: resolvePrompt(config, cov.entry),
+          coverage: cov,
+          triggerDiff: getStagedDiffForPaths(opts.cwd, cov.triggerPaths),
+          affectedFiles: readAffectedContents(opts.cwd, [
+            ...cov.entry.affects,
+          ]),
+        });
+        const result = await provider.run({ prompt, config: agentConfig });
+        agentRuns.push({
+          trigger: cov.entry.trigger,
+          status: 'ok',
+          runId: result.runId,
+        });
+      } catch (e: unknown) {
+        const h = normalizeError(e);
+        console.error(h.message);
+        agentRuns.push({
+          trigger: cov.entry.trigger,
+          status: 'error',
+        });
+        agentExit = 1;
+      }
+    }
+  }
+
+  if (opts.json) {
+    printCheckJson(
+      violations,
+      opts.runAgents ? agentRuns : undefined,
+    );
+  }
+
+  if (!opts.runAgents) {
+    return violationExit;
+  }
+
+  return Math.max(violationExit, agentExit);
 }
