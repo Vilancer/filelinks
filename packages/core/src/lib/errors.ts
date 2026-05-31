@@ -50,3 +50,15 @@ export class ConfigValidationError extends FilelinksError {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
+
+export class AgentConfigError extends FilelinksError {
+  constructor(message?: string, options?: { cause?: unknown }) {
+    super(
+      'AGENT_CONFIG_INVALID',
+      message ?? 'agent settings failed validation after merge',
+      options,
+    );
+    this.name = 'AgentConfigError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
