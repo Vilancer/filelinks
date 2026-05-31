@@ -177,6 +177,25 @@ describe('cursorAgentProvider', () => {
       expect(mockAgentCreate.mock.calls[0][0]).not.toHaveProperty('local');
     });
 
+    it('passes full cloud repo URLs through unchanged', async () => {
+      const gitlabUrl = 'https://gitlab.com/my-group/my-project';
+      await cursorAgentProvider.run({
+        prompt: 'check sync',
+        config: {
+          ...cloudConfig,
+          cloud: { repos: [gitlabUrl] },
+        },
+      });
+
+      expect(mockAgentCreate).toHaveBeenCalledWith({
+        apiKey: 'test-key',
+        model: { id: 'composer-2.5' },
+        cloud: {
+          repos: [{ url: gitlabUrl }],
+        },
+      });
+    });
+
     it('throws AGENT_RUN_FAILED when result status is error', async () => {
       mockWait.mockResolvedValue({
         id: 'run-err',

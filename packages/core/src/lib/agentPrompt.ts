@@ -50,7 +50,10 @@ function truncateContent(text: string): string {
     return text;
   }
   let end = text.length;
-  while (end > 0 && Buffer.byteLength(text.slice(0, end), 'utf8') > MAX_FILE_BYTES) {
+  while (
+    end > 0 &&
+    Buffer.byteLength(text.slice(0, end), 'utf8') > MAX_FILE_BYTES
+  ) {
     end -= 1;
   }
   return `${text.slice(0, end)}…(truncated)`;
@@ -71,6 +74,7 @@ export function buildAgentPrompt(input: {
     lines.push('');
   }
 
+  // v1.1: temperature/maxTokens are prompt metadata only (not Cursor SDK Agent.create options).
   const meta: string[] = [];
   if (prompt.temperature !== undefined) {
     meta.push(`temperature: ${prompt.temperature}`);

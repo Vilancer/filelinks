@@ -3,6 +3,7 @@ import type { AgentOptions } from '@cursor/sdk';
 
 import type { ResolvedAgentConfig } from '../agentConfigResolver';
 import {
+  AgentConfigError,
   AgentMissingApiKeyError,
   AgentRunFailedError,
   AgentStartupError,
@@ -53,7 +54,7 @@ function buildAgentCreateOptions(
   if (config.runtime === 'local') {
     const local = config.local;
     if (!local) {
-      throw new Error('agent.local is required for local runtime');
+      throw new AgentConfigError('agent.local is required for local runtime');
     }
     return {
       ...options,
@@ -66,7 +67,7 @@ function buildAgentCreateOptions(
 
   const cloud = config.cloud;
   if (!cloud) {
-    throw new Error('agent.cloud is required for cloud runtime');
+    throw new AgentConfigError('agent.cloud is required for cloud runtime');
   }
 
   return {

@@ -125,6 +125,8 @@ To skip hooks in an emergency: `git commit --no-verify` (use sparingly).
 - `filelinks add` can also capture model and prompt settings:
   - model picker (provider `listModels` + fallback),
   - global/per-link `prompt` (`systemPrompt`, optional `temperature`, optional `maxTokens`).
+- **`prompt.temperature` / `prompt.maxTokens` (v1.1):** Stored in config and included in the assembled agent prompt as text metadata only; they are **not** sent as Cursor SDK `Agent.create` generation options in v1.1.
+- **`agent.cloud.repos` (v1.1):** Full `https://` / `http://` URLs pass through; bare `org/repo` is GitHub shorthand (`https://github.com/org/repo`). Use full URLs for non-GitHub hosts.
 
 ## AI agents (v1.1)
 
@@ -149,7 +151,7 @@ For `filelinks check --run-agents`, Cursor credentials resolve in this order:
    filelinks check --run-agents
    ```
 
-   Use **`--json --run-agents`** to inspect the optional **`agentRuns`** array.
+   Use **`--json --run-agents`** to inspect the optional **`agentRuns`** array (one row per policy-eligible link, including **`status: 'error'`** when the API key is missing).
 
 4. If using `filelinks add`, verify generated config includes the expected `agent` blocks (global and/or per-link) before smoke runs.
 5. If testing model/prompt wizard paths, verify generated `agent.model`, optional `agent.modelParams`, and `prompt` fields in both global and per-link scopes.

@@ -73,7 +73,11 @@ filelinks check --cwd /path/to/repo --config ./my/filelinks.config.ts
 3. `CURSOR_API_KEY` in `.env.local` under `--cwd`
 4. `CURSOR_API_KEY` in `.env` under `--cwd`
 
-**Machine-readable output:** with **`--json --run-agents`**, the JSON payload includes an optional **`agentRuns`** array (per-link summaries) after agent execution.
+**Machine-readable output:** with **`--json --run-agents`**, the JSON payload includes an optional **`agentRuns`** array (per-link summaries) after agent execution. If the Cursor API key is missing, every policy-eligible link still gets an **`agentRuns`** entry with **`status: 'error'`** (not only the first link).
+
+**Prompt `temperature` / `maxTokens` (v1.1):** These optional fields are merged into config like other `prompt` settings, but they are **not** passed to Cursor **`Agent.create`** in v1.1. They appear as metadata lines in the assembled agent prompt text only. Use them as hints for the agent in the prompt until a future release wires SDK generation options (if supported).
+
+**Cloud `agent.cloud.repos` (v1.1):** Entries may be full repository URLs (`https://…` or `http://…`), which are passed through unchanged. Bare **`org/repo`** strings are treated as **GitHub shorthand** and expanded to `https://github.com/org/repo`. For GitLab, Bitbucket, or self-hosted hosts, use a full URL.
 
 Examples:
 

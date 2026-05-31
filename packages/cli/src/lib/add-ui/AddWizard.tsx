@@ -431,6 +431,20 @@ export function AddWizard({
     return num;
   };
 
+  const isInvalidOptionalNumberDraft = (draft: string): boolean => {
+    const trimmed = draft.trim();
+    return trimmed.length > 0 && parseOptionalNumber(trimmed) === undefined;
+  };
+
+  const isInvalidOptionalIntegerDraft = (draft: string): boolean => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      return false;
+    }
+    const num = Number(trimmed);
+    return !Number.isFinite(num) || !Number.isInteger(num);
+  };
+
   const parseOptionalInteger = (draft: string): number | undefined => {
     const n = parseOptionalNumber(draft);
     if (n === undefined) {
@@ -1256,10 +1270,14 @@ export function AddWizard({
   }
 
   if (phase === 'promptGlobalTemperature') {
+    const invalid = isInvalidOptionalNumberDraft(globalTemperatureDraft);
     return (
       <Box flexDirection="column">
         <Text bold>Global prompt.temperature (optional number)</Text>
         <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid number or leave empty.</Text>
+        ) : null}
         <Box marginTop={1}>
           <Text color="cyan">› </Text>
           <TextInput
@@ -1267,6 +1285,9 @@ export function AddWizard({
             onChange={setGlobalTemperatureDraft}
             onSubmit={(v: string) => {
               setGlobalTemperatureDraft(v);
+              if (isInvalidOptionalNumberDraft(v)) {
+                return;
+              }
               setPhase('promptGlobalMaxTokens');
             }}
             placeholder="for example 0.2"
@@ -1278,10 +1299,14 @@ export function AddWizard({
   }
 
   if (phase === 'promptGlobalMaxTokens') {
+    const invalid = isInvalidOptionalIntegerDraft(globalMaxTokensDraft);
     return (
       <Box flexDirection="column">
         <Text bold>Global prompt.maxTokens (optional integer)</Text>
         <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid integer or leave empty.</Text>
+        ) : null}
         <Box marginTop={1}>
           <Text color="cyan">› </Text>
           <TextInput
@@ -1289,6 +1314,9 @@ export function AddWizard({
             onChange={setGlobalMaxTokensDraft}
             onSubmit={(v: string) => {
               setGlobalMaxTokensDraft(v);
+              if (isInvalidOptionalIntegerDraft(v)) {
+                return;
+              }
               setGlobalPrompt(
                 buildPromptConfig(
                   globalSystemPromptDraft,
@@ -1351,10 +1379,14 @@ export function AddWizard({
   }
 
   if (phase === 'promptLinkTemperature') {
+    const invalid = isInvalidOptionalNumberDraft(entryTemperatureDraft);
     return (
       <Box flexDirection="column">
         <Text bold>Per-link prompt.temperature (optional number)</Text>
         <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid number or leave empty.</Text>
+        ) : null}
         <Box marginTop={1}>
           <Text color="cyan">› </Text>
           <TextInput
@@ -1362,6 +1394,9 @@ export function AddWizard({
             onChange={setEntryTemperatureDraft}
             onSubmit={(v: string) => {
               setEntryTemperatureDraft(v);
+              if (isInvalidOptionalNumberDraft(v)) {
+                return;
+              }
               setPhase('promptLinkMaxTokens');
             }}
             placeholder="for example 0.2"
@@ -1373,10 +1408,14 @@ export function AddWizard({
   }
 
   if (phase === 'promptLinkMaxTokens') {
+    const invalid = isInvalidOptionalIntegerDraft(entryMaxTokensDraft);
     return (
       <Box flexDirection="column">
         <Text bold>Per-link prompt.maxTokens (optional integer)</Text>
         <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid integer or leave empty.</Text>
+        ) : null}
         <Box marginTop={1}>
           <Text color="cyan">› </Text>
           <TextInput
@@ -1384,6 +1423,9 @@ export function AddWizard({
             onChange={setEntryMaxTokensDraft}
             onSubmit={(v: string) => {
               setEntryMaxTokensDraft(v);
+              if (isInvalidOptionalIntegerDraft(v)) {
+                return;
+              }
               setEntryPrompt(
                 buildPromptConfig(
                   entrySystemPromptDraft,

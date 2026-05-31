@@ -288,6 +288,57 @@ describe('runCheck agent orchestration', () => {
     errorSpy.mockRestore();
   });
 
+  it('JSON agentRuns lists every eligible link when API key is missing', async () => {
+    const entry2 = {
+      trigger: 'lib/**',
+      affects: [{ file: 'lib/readme.md', reason: 'sync' }],
+    };
+    mockCore.matchStagedLinks.mockReturnValue([]);
+    mockCore.classifyStagedLinks.mockReturnValue([
+      {
+        entry,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['apps/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+      {
+        entry: entry2,
+        triggerMatched: true,
+        affectMatched: false,
+        triggerPaths: ['lib/foo.ts'],
+        affectPaths: [],
+        missingAffected: [],
+      },
+    ]);
+    mockCore.shouldRunAgentForLink.mockReturnValue(true);
+    delete process.env['CURSOR_API_KEY'];
+    const tempDir = mkdtempSync(join(tmpdir(), 'filelinks-runcheck-'));
+    tempDirs.push(tempDir);
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const code = await runCheck({
+      cwd: tempDir,
+      json: true,
+      runAgents: true,
+    });
+
+    expect(code).toBe(1);
+    expect(mockRun).not.toHaveBeenCalled();
+    const payload = JSON.parse(String(log.mock.calls[0]?.[0])) as {
+      agentRuns?: { trigger: string; status: string }[];
+    };
+    expect(payload.agentRuns).toEqual([
+      { trigger: 'apps/**/*.ts', status: 'error' },
+      { trigger: 'lib/**', status: 'error' },
+    ]);
+
+    log.mockRestore();
+  });
+
   it('JSON output includes agentRuns when runAgents true', async () => {
     mockCore.matchStagedLinks.mockReturnValue([]);
     mockCore.classifyStagedLinks.mockReturnValue([

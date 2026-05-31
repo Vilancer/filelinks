@@ -4,6 +4,7 @@ import {
   describeModelVariant,
   expandCursorModelOptions,
   modelOptionKey,
+  parseModelOptionKey,
   sortAgentModelOptions,
 } from './cursorModelOptions.js';
 
@@ -49,6 +50,14 @@ const opusBaseline = new Map<string, string>([
 ]);
 
 describe('cursorModelOptions', () => {
+  it('parseModelOptionKey preserves = in param values', () => {
+    const key = 'model-id|note=a=b';
+    expect(parseModelOptionKey(key)).toEqual({
+      id: 'model-id',
+      params: [{ id: 'note', value: 'a=b' }],
+    });
+  });
+
   it('expands fast variants for composer models', () => {
     const options = expandCursorModelOptions([
       {

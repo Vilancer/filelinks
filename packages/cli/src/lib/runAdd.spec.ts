@@ -3,7 +3,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import { validateResolvedAgentConfig } from '@filelinks/core';
+import {
+  AgentMissingApiKeyError,
+  validateResolvedAgentConfig,
+} from '@filelinks/core';
 
 import {
   listWizardModels,
@@ -226,23 +229,25 @@ describe('mergeConfigUpdates', () => {
 });
 
 describe('listWizardModels', () => {
-  it('falls back to static models when credentials are missing', async () => {
-    const models = await listWizardModels(
-      {
-        provider: 'cursor',
-        runtime: 'local',
-        runPolicy: 'trigger-only',
-        local: { cwd: '.' },
-      },
-      process.cwd(),
-    );
+  it('throws AgentMissingApiKeyError when credentials are missing', async () => {
+    const prev = process.env['CURSOR_API_KEY'];
+    delete process.env['CURSOR_API_KEY'];
 
-    expect(models.map((m) => m.label)).toEqual([
-      'Composer 2 (default)',
-      'Composer 2 (Standard)',
-      'Composer 2.5 (default)',
-      'Composer 2.5 (Standard)',
-    ]);
+    await expect(
+      listWizardModels(
+        {
+          provider: 'cursor',
+          runtime: 'local',
+          runPolicy: 'trigger-only',
+          local: { cwd: '.' },
+        },
+        process.cwd(),
+      ),
+    ).rejects.toBeInstanceOf(AgentMissingApiKeyError);
+
+    if (prev !== undefined) {
+      process.env['CURSOR_API_KEY'] = prev;
+    }
   });
 });
 

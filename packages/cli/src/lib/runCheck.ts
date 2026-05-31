@@ -114,7 +114,7 @@ export async function runCheck(opts: RunCheckOpts): Promise<number> {
             status: 'error',
           });
           agentExit = 1;
-          break;
+          continue;
         }
         const provider = getAgentProvider(agentConfig.provider);
         const prompt = buildAgentPrompt({

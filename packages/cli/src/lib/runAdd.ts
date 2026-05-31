@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { render } from 'ink';
 
 import {
+  AgentMissingApiKeyError,
   defineLinks,
   findConfigFile,
   getAgentProvider,
@@ -162,7 +163,10 @@ export async function listWizardModels(
       return FALLBACK_MODELS;
     }
     return sortAgentModelOptions(liveModels);
-  } catch {
+  } catch (e) {
+    if (e instanceof AgentMissingApiKeyError) {
+      throw e;
+    }
     return FALLBACK_MODELS;
   }
 }
