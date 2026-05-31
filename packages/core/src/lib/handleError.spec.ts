@@ -1,7 +1,7 @@
 import * as Schema from 'effect/Schema';
 import { describe, expect, it } from 'vitest';
 
-import { ConfigNotFoundError } from './errors';
+import { AgentMissingApiKeyError, ConfigNotFoundError } from './errors';
 import { normalizeError } from './handleError';
 
 describe('normalizeError', () => {
@@ -12,6 +12,14 @@ describe('normalizeError', () => {
     expect(r.code).toBe('CONFIG_NOT_FOUND');
     expect(r.message).toContain('missing');
     expect(r.details).toBeUndefined();
+  });
+
+  it('maps AgentMissingApiKeyError to AGENT_MISSING_API_KEY', () => {
+    const err = new AgentMissingApiKeyError();
+    const r = normalizeError(err);
+    expect(r.ok).toBe(false);
+    expect(r.code).toBe('AGENT_MISSING_API_KEY');
+    expect(r.message).toContain('CURSOR_API_KEY');
   });
 
   it('maps ParseError to CONFIG_VALIDATION', () => {
