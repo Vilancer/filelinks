@@ -5,6 +5,7 @@
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "dependencies": {
+    "@cursor/sdk": "^1.0.17",
     "effect": "^3.21.0",
     "jiti": "^2.4.2",
     "minimatch": "^10.0.1",
