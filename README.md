@@ -49,6 +49,59 @@ filelinks check --json
 filelinks check --cwd /path/to/repo --config ./my/filelinks.config.ts
 ```
 
+#### Running agents (v1.1)
+
+**`filelinks check --run-agents`** is opt-in: the CLI runs the usual staged **check** (violations, exit code on `severity: 'error'`), then invokes Cursor agents for links that match the run policy.
+
+**When agents run:** default policy **`trigger-or-affects`** (global `agent.runPolicy` or per-link override). A link is eligible when its **trigger** and/or **affect** paths appear in the staged set (via the same staged classification as check). **Missing companion files on disk do not block** an agent run — violations are reported separately; agents still run when policy allows.
+
+**Authentication:** set **`CURSOR_API_KEY`** in the environment for the Cursor provider.
+
+**Machine-readable output:** with **`--json --run-agents`**, the JSON payload includes an optional **`agentRuns`** array (per-link summaries) after agent execution.
+
+Example config (global defaults + per-link override):
+
+```typescript
+import { defineLinks } from '@filelinks/core';
+
+export default defineLinks(
+  [
+    {
+      trigger: 'apps/api/src/routes/user.ts',
+      affects: [{ file: 'apps/api/docs/openapi.yaml', reason: 'Keep OpenAPI in sync' }],
+      agent: {
+        runPolicy: 'trigger-or-affects',
+        provider: 'cursor',
+        runtime: 'local',
+        model: 'composer-2',
+        local: { cwd: '/path/to/your/repo' },
+      },
+    },
+    {
+      trigger: 'packages/web/**',
+      affects: [{ file: 'packages/web/README.md', reason: 'Update docs' }],
+      agent: {
+        provider: 'cursor',
+        runtime: 'cloud',
+        model: 'composer-2',
+        cloud: { repos: ['org/your-repo'] },
+      },
+    },
+  ],
+  {
+    agent: {
+      runPolicy: 'trigger-or-affects',
+      provider: 'cursor',
+      runtime: 'local',
+      model: 'composer-2',
+      local: { cwd: '.' },
+    },
+  },
+);
+```
+
+For contributor smoke tests, CI notes, and the linked-consumer workflow, see **`CONTRIBUTING.md`** → **AI agents (v1.1)**.
+
 ### `filelinks list`
 
 Print all declared links (table, or **`--json`**).
