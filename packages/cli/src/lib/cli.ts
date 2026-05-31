@@ -56,7 +56,7 @@ function globalOpts(cmd: Command): {
   };
 }
 
-export function runCli(argv: string[]): void {
+export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
 
   program
@@ -75,13 +75,24 @@ export function runCli(argv: string[]): void {
   program
     .command('check')
     .description('Check staged files against declared links')
-    .action(function (this: Command) {
+    .option('--run-agents', 'Run agents for policy-eligible links after check')
+    .option(
+      '--cursor-api-key <key>',
+      'Cursor API key override for --run-agents',
+    )
+    .action(async function (this: Command) {
       try {
         const g = globalOpts(this);
-        process.exitCode = runCheck({
+        const opts = this.opts() as {
+          runAgents?: boolean;
+          cursorApiKey?: string;
+        };
+        process.exitCode = await runCheck({
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
+          runAgents: Boolean(opts.runAgents),
+          cursorApiKey: opts.cursorApiKey,
         });
       } catch (e: unknown) {
         const h = normalizeError(e);
@@ -128,7 +139,7 @@ export function runCli(argv: string[]): void {
     });
 
   try {
-    program.parse(argv);
+    await program.parseAsync(argv);
   } catch (e: unknown) {
     const h = normalizeError(e);
     console.error(h.message);

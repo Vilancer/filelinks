@@ -2,7 +2,11 @@ import * as cp from 'node:child_process';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getGitRepoRoot, getStagedFilePaths } from './gitReader';
+import {
+  getGitRepoRoot,
+  getStagedDiffForPaths,
+  getStagedFilePaths,
+} from './gitReader';
 
 vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(),
@@ -33,6 +37,23 @@ describe('gitReader', () => {
       'git',
       ['diff', '-z', '--name-only', '--cached'],
       { cwd: '/cwd' }
+    );
+  });
+
+  it('getStagedDiffForPaths returns empty string without calling git when paths empty', () => {
+    expect(getStagedDiffForPaths('/cwd', [])).toBe('');
+    expect(cp.execFileSync).not.toHaveBeenCalled();
+  });
+
+  it('getStagedDiffForPaths runs git diff --cached for repo-relative paths', () => {
+    vi.mocked(cp.execFileSync).mockReturnValue('diff --git a/foo.ts\n');
+    expect(getStagedDiffForPaths('/cwd', ['foo.ts', 'bar/baz.ts'])).toBe(
+      'diff --git a/foo.ts\n',
+    );
+    expect(cp.execFileSync).toHaveBeenCalledWith(
+      'git',
+      ['diff', '--cached', '--', 'foo.ts', 'bar/baz.ts'],
+      { cwd: '/cwd', encoding: 'utf8' },
     );
   });
 });

@@ -35,4 +35,89 @@ describe('defineLinks', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts trigger-only and trigger-or-affects at agent levels', () => {
+    const { links, config } = defineLinks(
+      [
+        {
+          trigger: 'a.ts',
+          affects: [{ file: 'b.ts', reason: 'sync' }],
+          agent: { runPolicy: 'trigger-only' },
+        },
+      ],
+      { agent: { runPolicy: 'trigger-or-affects' } },
+    );
+    expect(config.agent?.runPolicy).toBe('trigger-or-affects');
+    expect(links[0]?.agent?.runPolicy).toBe('trigger-only');
+  });
+
+  it('rejects invalid agent runPolicy at decode', () => {
+    expect(() =>
+      defineLinks([
+        {
+          trigger: 'a.ts',
+          affects: [],
+          agent: { runPolicy: 'always' as 'trigger-or-affects' },
+        },
+      ]),
+    ).toThrow();
+
+    expect(() =>
+      defineLinks([], {
+        agent: { runPolicy: 'never' as 'trigger-or-affects' },
+      }),
+    ).toThrow();
+  });
+
+  it('accepts agent execution fields at global and per-link levels', () => {
+    const { links, config } = defineLinks(
+      [
+        {
+          trigger: 'a.ts',
+          affects: [{ file: 'b.ts', reason: 'sync' }],
+          agent: {
+            provider: 'cursor',
+            runtime: 'local',
+            local: { cwd: '.' },
+          },
+        },
+      ],
+      {
+        agent: {
+          provider: 'cursor',
+          runtime: 'cloud',
+          cloud: { repos: ['org/repo'] },
+        },
+      },
+    );
+    expect(config.agent?.provider).toBe('cursor');
+    expect(config.agent?.runtime).toBe('cloud');
+    expect(links[0]?.agent?.provider).toBe('cursor');
+    expect(links[0]?.agent?.runtime).toBe('local');
+    expect(links[0]?.agent?.local?.cwd).toBe('.');
+  });
+
+  it('rejects invalid agent provider at decode', () => {
+    expect(() =>
+      defineLinks([
+        {
+          trigger: 'a.ts',
+          affects: [],
+          agent: { provider: 'openai' as 'cursor' },
+        },
+      ]),
+    ).toThrow();
+  });
+
+  it('rejects invalid agent runtime at decode', () => {
+    expect(() =>
+      defineLinks([
+        {
+          trigger: 'a.ts',
+          affects: [],
+          agent: { runtime: 'hybrid' as 'local' },
+        },
+      ]),
+    ).toThrow();
+  });
 });

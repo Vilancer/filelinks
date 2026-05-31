@@ -7,13 +7,26 @@ import {
   LINK_TYPE_DESCRIPTIONS,
   linkTypeForPathKinds,
 } from '@filelinks/core';
-import type { FileLinkEntry, LinkType } from '@filelinks/core';
+import {
+  parseModelOptionKey,
+  type AgentModelOption,
+  type AgentModelParameter,
+  type AgentRunPolicy,
+  type AgentRuntime,
+  type AgentSettings,
+  type FileLinkEntry,
+  type LinkType,
+  type PromptConfig,
+} from '@filelinks/core';
 
 import { filterPaths } from '../pathCandidates.js';
 import { CliStartLogo } from '../ui/CliStartLogo.js';
+import { ModelPickerPhase } from './ModelPickerPhase.js';
 import { SelectableList } from './SelectableList.js';
+import type { AddCommitPayload } from './types.js';
 
 export type AddWizardProps = {
+  readonly cwd: string;
   readonly loadCandidates: () => Promise<
     | string[]
     | {
@@ -21,7 +34,12 @@ export type AddWizardProps = {
         readonly directories: string[];
       }
   >;
-  readonly onCommit: (entry: FileLinkEntry) => Promise<number>;
+  readonly loadModels: (
+    agent: AgentSettings,
+    cwd: string,
+  ) => Promise<AgentModelOption[]>;
+  readonly existingGlobalAgentSummary?: string;
+  readonly onCommit: (payload: AddCommitPayload) => Promise<number>;
 };
 
 type Phase =
@@ -33,10 +51,35 @@ type Phase =
   | 'affectReason'
   | 'moreAffects'
   | 'severity'
-  | 'linkType';
+  | 'linkType'
+  | 'agentGlobalPrompt'
+  | 'agentGlobalPolicy'
+  | 'agentGlobalRuntime'
+  | 'agentGlobalLocalCwd'
+  | 'agentGlobalCloudRepos'
+  | 'agentGlobalModel'
+  | 'agentGlobalModelManual'
+  | 'agentLinkPrompt'
+  | 'agentLinkPolicy'
+  | 'agentLinkRuntime'
+  | 'agentLinkLocalCwd'
+  | 'agentLinkCloudRepos'
+  | 'agentLinkModel'
+  | 'agentLinkModelManual'
+  | 'promptGlobalPrompt'
+  | 'promptGlobalSystem'
+  | 'promptGlobalTemperature'
+  | 'promptGlobalMaxTokens'
+  | 'promptLinkPrompt'
+  | 'promptLinkSystem'
+  | 'promptLinkTemperature'
+  | 'promptLinkMaxTokens';
 
 export function AddWizard({
+  cwd,
   loadCandidates,
+  loadModels,
+  existingGlobalAgentSummary,
   onCommit,
 }: AddWizardProps): React.ReactElement {
   const { exit } = useApp();
@@ -65,6 +108,45 @@ export function AddWizard({
   const [severity, setSeverity] = useState<'warn' | 'error' | null>(null);
   /** Set synchronously on severity pick so runCommit never reads stale React state. */
   const severityRef = useRef<'warn' | 'error' | null>(null);
+  const [selectedLinkType, setSelectedLinkType] = useState<
+    LinkType | undefined
+  >(undefined);
+  const [globalAgent, setGlobalAgent] = useState<AgentSettings | undefined>(
+    undefined,
+  );
+  const [globalAgentRunPolicy, setGlobalAgentRunPolicy] =
+    useState<AgentRunPolicy>('trigger-only');
+  const [globalAgentModelDraft, setGlobalAgentModelDraft] = useState('');
+  const [globalModelOptions, setGlobalModelOptions] = useState<
+    AgentModelOption[]
+  >([]);
+  const [globalModelError, setGlobalModelError] = useState<string | null>(null);
+  const [globalLocalCwd, setGlobalLocalCwd] = useState('.');
+  const [globalCloudReposDraft, setGlobalCloudReposDraft] = useState('');
+  const [entryAgent, setEntryAgent] = useState<AgentSettings | undefined>(
+    undefined,
+  );
+  const [entryAgentRunPolicy, setEntryAgentRunPolicy] =
+    useState<AgentRunPolicy>('trigger-only');
+  const [entryAgentModelDraft, setEntryAgentModelDraft] = useState('');
+  const [entryModelOptions, setEntryModelOptions] = useState<
+    AgentModelOption[]
+  >([]);
+  const [entryModelError, setEntryModelError] = useState<string | null>(null);
+  const [entryLocalCwd, setEntryLocalCwd] = useState('.');
+  const [entryCloudReposDraft, setEntryCloudReposDraft] = useState('');
+  const [globalPrompt, setGlobalPrompt] = useState<PromptConfig | undefined>(
+    undefined,
+  );
+  const [entryPrompt, setEntryPrompt] = useState<PromptConfig | undefined>(
+    undefined,
+  );
+  const [globalSystemPromptDraft, setGlobalSystemPromptDraft] = useState('');
+  const [globalTemperatureDraft, setGlobalTemperatureDraft] = useState('');
+  const [globalMaxTokensDraft, setGlobalMaxTokensDraft] = useState('');
+  const [entrySystemPromptDraft, setEntrySystemPromptDraft] = useState('');
+  const [entryTemperatureDraft, setEntryTemperatureDraft] = useState('');
+  const [entryMaxTokensDraft, setEntryMaxTokensDraft] = useState('');
   const [loadingTick, setLoadingTick] = useState(0);
 
   useEffect(() => {
@@ -297,11 +379,127 @@ export function AddWizard({
     }
   });
 
-  const runCommit = async (
-    linkType?: LinkType,
-    commit?: { severity?: 'warn' | 'error' },
+  const parseRepos = (draft: string): string[] =>
+    draft
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+  const buildAgentSettings = (
+    runtime: AgentRuntime,
+    runPolicy: AgentRunPolicy = 'trigger-only',
+    values: { localCwd?: string; cloudRepos?: string[] },
+  ): AgentSettings => ({
+    runPolicy,
+    provider: 'cursor',
+    runtime,
+    ...(runtime === 'local'
+      ? { local: { cwd: values.localCwd ?? '.' } }
+      : { cloud: { repos: values.cloudRepos ?? [] } }),
+  });
+
+  const withModel = (
+    agent: AgentSettings | undefined,
+    model: string,
+    modelParams?: AgentModelParameter[],
+  ): AgentSettings | undefined => {
+    if (agent === undefined) {
+      return undefined;
+    }
+    const trimmed = model.trim();
+    if (!trimmed) {
+      return agent;
+    }
+    const base: AgentSettings = { ...agent, model: trimmed };
+    if (modelParams?.length) {
+      return { ...base, modelParams };
+    }
+    const { modelParams: _drop, ...withoutParams } = base;
+    void _drop;
+    return withoutParams;
+  };
+
+  const parseOptionalNumber = (draft: string): number | undefined => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const num = Number(trimmed);
+    if (!Number.isFinite(num)) {
+      return undefined;
+    }
+    return num;
+  };
+
+  const isInvalidOptionalNumberDraft = (draft: string): boolean => {
+    const trimmed = draft.trim();
+    return trimmed.length > 0 && parseOptionalNumber(trimmed) === undefined;
+  };
+
+  const isInvalidOptionalIntegerDraft = (draft: string): boolean => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      return false;
+    }
+    const num = Number(trimmed);
+    return !Number.isFinite(num) || !Number.isInteger(num);
+  };
+
+  const parseOptionalInteger = (draft: string): number | undefined => {
+    const n = parseOptionalNumber(draft);
+    if (n === undefined) {
+      return undefined;
+    }
+    return Math.trunc(n);
+  };
+
+  const buildPromptConfig = (
+    systemPromptDraft: string,
+    temperatureDraft: string,
+    maxTokensDraft: string,
+  ): PromptConfig | undefined => {
+    const systemPrompt = systemPromptDraft.trim();
+    const temperature = parseOptionalNumber(temperatureDraft);
+    const maxTokens = parseOptionalInteger(maxTokensDraft);
+    const prompt: PromptConfig = {
+      ...(systemPrompt ? { systemPrompt } : {}),
+      ...(temperature !== undefined ? { temperature } : {}),
+      ...(maxTokens !== undefined ? { maxTokens } : {}),
+    };
+    return Object.keys(prompt).length > 0 ? prompt : undefined;
+  };
+
+  const beginModelSelection = async (
+    scope: 'global' | 'link',
+    agent: AgentSettings,
   ) => {
-    const sev = commit?.severity ?? severityRef.current ?? severity;
+    if (scope === 'global') {
+      setGlobalModelError(null);
+      setGlobalModelOptions([]);
+    } else {
+      setEntryModelError(null);
+      setEntryModelOptions([]);
+    }
+    try {
+      const models = await loadModels(agent, cwd);
+      if (scope === 'global') {
+        setGlobalModelOptions(models);
+      } else {
+        setEntryModelOptions(models);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (scope === 'global') {
+        setGlobalModelError(msg);
+      } else {
+        setEntryModelError(msg);
+      }
+    }
+    setPhase(scope === 'global' ? 'agentGlobalModel' : 'agentLinkModel');
+  };
+
+  const runCommit = async () => {
+    const sev = severityRef.current ?? severity;
     if (sev === null) {
       return;
     }
@@ -314,9 +512,15 @@ export function AddWizard({
       trigger: triggerText,
       affects: affects.map(({ file, reason }) => ({ file, reason })),
       severity: sev,
-      ...(linkType !== undefined ? { linkType } : {}),
+      ...(selectedLinkType !== undefined ? { linkType: selectedLinkType } : {}),
+      ...(entryAgent !== undefined ? { agent: entryAgent } : {}),
+      ...(entryPrompt !== undefined ? { prompt: entryPrompt } : {}),
     };
-    const code = await onCommit(entry);
+    const code = await onCommit({
+      entry,
+      ...(globalAgent !== undefined ? { configAgent: globalAgent } : {}),
+      ...(globalPrompt !== undefined ? { configPrompt: globalPrompt } : {}),
+    });
     process.exitCode = code;
     exit();
   };
@@ -599,7 +803,8 @@ export function AddWizard({
             setSeverity(v);
             const auto = resolveAutoLinkType();
             if (auto !== null) {
-              void runCommit(auto, { severity: v });
+              setSelectedLinkType(auto);
+              setPhase('agentGlobalPrompt');
               return;
             }
             setPhase('linkType');
@@ -629,12 +834,611 @@ export function AddWizard({
               return;
             }
             if (v === 'skip') {
-              void runCommit(undefined, { severity: sevPick });
+              setSelectedLinkType(undefined);
             } else {
-              void runCommit(v, { severity: sevPick });
+              setSelectedLinkType(v);
+            }
+            setPhase('agentGlobalPrompt');
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalPrompt') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global agent defaults (optional)</Text>
+        <Text dimColor>
+          Set global config.agent defaults now? (provider cursor + explicit
+          runPolicy)
+        </Text>
+        {existingGlobalAgentSummary ? (
+          <Text dimColor>
+            Existing global agent: {existingGlobalAgentSummary}
+          </Text>
+        ) : null}
+        <SelectableList
+          items={[
+            { label: 'Yes — configure global agent defaults', value: 'yes' },
+            { label: 'No — skip global defaults', value: 'no' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'yes') {
+              setGlobalAgentRunPolicy('trigger-only');
+              setPhase('agentGlobalPolicy');
+            } else {
+              setGlobalAgent(undefined);
+              setPhase('agentLinkPrompt');
             }
           }}
         />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalPolicy') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global run policy</Text>
+        <Text dimColor>
+          Choose how often global agents run when a link is staged.
+        </Text>
+        <SelectableList<AgentRunPolicy>
+          items={[
+            {
+              label:
+                'trigger-only (default) - Run agent only when trigger path is staged.',
+              value: 'trigger-only',
+            },
+            {
+              label:
+                'trigger-or-affects - Run agent when trigger or affected path is staged.',
+              value: 'trigger-or-affects',
+            },
+          ]}
+          onSelect={(v) => {
+            setGlobalAgentRunPolicy(v);
+            setPhase('agentGlobalRuntime');
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalRuntime') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global runtime</Text>
+        <SelectableList<AgentRuntime>
+          items={[
+            { label: 'local — run against local cwd', value: 'local' },
+            { label: 'cloud — run against cloud repos[]', value: 'cloud' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'local') {
+              setPhase('agentGlobalLocalCwd');
+            } else {
+              setPhase('agentGlobalCloudRepos');
+            }
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalLocalCwd') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global local.cwd</Text>
+        <Text dimColor>
+          Path used by Cursor local runtime. Example: "." or an absolute path.
+        </Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalLocalCwd}
+            onChange={setGlobalLocalCwd}
+            onSubmit={(v: string) => {
+              const cwd = v.trim() || '.';
+              setGlobalLocalCwd(cwd);
+              const nextGlobalAgent = buildAgentSettings(
+                'local',
+                globalAgentRunPolicy,
+                {
+                  localCwd: cwd,
+                },
+              );
+              setGlobalAgent(nextGlobalAgent);
+              void beginModelSelection('global', nextGlobalAgent);
+            }}
+            placeholder="local cwd (for example .)"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalCloudRepos') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global cloud.repos</Text>
+        <Text dimColor>
+          Comma-separated repo slugs (for example: org/repo, org/another-repo)
+        </Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalCloudReposDraft}
+            onChange={setGlobalCloudReposDraft}
+            onSubmit={(v: string) => {
+              const repos = parseRepos(v);
+              if (repos.length === 0) {
+                return;
+              }
+              setGlobalCloudReposDraft(v);
+              const nextGlobalAgent = buildAgentSettings(
+                'cloud',
+                globalAgentRunPolicy,
+                {
+                  cloudRepos: repos,
+                },
+              );
+              setGlobalAgent(nextGlobalAgent);
+              void beginModelSelection('global', nextGlobalAgent);
+            }}
+            placeholder="org/repo, org/another-repo"
+            focus
+          />
+        </Box>
+        <Text dimColor>Enter at least one repo slug.</Text>
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalModel') {
+    return (
+      <ModelPickerPhase
+        title="Global model"
+        subtitle="Select model for global config.agent"
+        error={globalModelError}
+        options={globalModelOptions}
+        onManual={() => setPhase('agentGlobalModelManual')}
+        onSelectModel={(key) => {
+          const picked = parseModelOptionKey(key);
+          setGlobalAgent(withModel(globalAgent, picked.id, picked.params));
+          setPhase('agentLinkPrompt');
+        }}
+      />
+    );
+  }
+
+  if (phase === 'agentGlobalModelManual') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global model (manual)</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalAgentModelDraft}
+            onChange={setGlobalAgentModelDraft}
+            onSubmit={(v: string) => {
+              const model = v.trim();
+              if (!model) {
+                return;
+              }
+              setGlobalAgentModelDraft(model);
+              setGlobalAgent(withModel(globalAgent, model));
+              setPhase('agentLinkPrompt');
+            }}
+            placeholder="for example composer-2.5"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkPrompt') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link agent override (optional)</Text>
+        <Text dimColor>
+          Add `entry.agent` for this link? Choose skip to inherit global agent.
+        </Text>
+        <SelectableList
+          items={[
+            {
+              label: 'Use global only (no per-link override)',
+              value: 'skip',
+            },
+            { label: 'Add per-link agent override', value: 'yes' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'yes') {
+              setEntryAgentRunPolicy('trigger-only');
+              setPhase('agentLinkPolicy');
+            } else {
+              setEntryAgent(undefined);
+              setPhase('promptGlobalPrompt');
+            }
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkPolicy') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link run policy</Text>
+        <Text dimColor>Choose how often this link's agent override runs.</Text>
+        <SelectableList<AgentRunPolicy>
+          items={[
+            {
+              label:
+                'trigger-only (default) - Run agent only when trigger path is staged.',
+              value: 'trigger-only',
+            },
+            {
+              label:
+                'trigger-or-affects - Run agent when trigger or affected path is staged.',
+              value: 'trigger-or-affects',
+            },
+          ]}
+          onSelect={(v) => {
+            setEntryAgentRunPolicy(v);
+            setPhase('agentLinkRuntime');
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkRuntime') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link runtime</Text>
+        <SelectableList<AgentRuntime>
+          items={[
+            { label: 'local — override with local.cwd', value: 'local' },
+            { label: 'cloud — override with cloud.repos[]', value: 'cloud' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'local') {
+              setPhase('agentLinkLocalCwd');
+            } else {
+              setPhase('agentLinkCloudRepos');
+            }
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkLocalCwd') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link local.cwd</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entryLocalCwd}
+            onChange={setEntryLocalCwd}
+            onSubmit={(v: string) => {
+              const cwd = v.trim() || '.';
+              setEntryLocalCwd(cwd);
+              const nextEntryAgent = buildAgentSettings(
+                'local',
+                entryAgentRunPolicy,
+                {
+                  localCwd: cwd,
+                },
+              );
+              setEntryAgent(nextEntryAgent);
+              void beginModelSelection('link', nextEntryAgent);
+            }}
+            placeholder="local cwd (for example .)"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkCloudRepos') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link cloud.repos</Text>
+        <Text dimColor>Comma-separated repo slugs</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entryCloudReposDraft}
+            onChange={setEntryCloudReposDraft}
+            onSubmit={(v: string) => {
+              const repos = parseRepos(v);
+              if (repos.length === 0) {
+                return;
+              }
+              setEntryCloudReposDraft(v);
+              const nextEntryAgent = buildAgentSettings(
+                'cloud',
+                entryAgentRunPolicy,
+                {
+                  cloudRepos: repos,
+                },
+              );
+              setEntryAgent(nextEntryAgent);
+              void beginModelSelection('link', nextEntryAgent);
+            }}
+            placeholder="org/repo, org/another-repo"
+            focus
+          />
+        </Box>
+        <Text dimColor>Enter at least one repo slug.</Text>
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkModel') {
+    return (
+      <ModelPickerPhase
+        title="Per-link model override"
+        subtitle="Select model for entry.agent override"
+        error={entryModelError}
+        options={entryModelOptions}
+        onManual={() => setPhase('agentLinkModelManual')}
+        onSelectModel={(key) => {
+          const picked = parseModelOptionKey(key);
+          setEntryAgent(withModel(entryAgent, picked.id, picked.params));
+          setPhase('promptGlobalPrompt');
+        }}
+      />
+    );
+  }
+
+  if (phase === 'agentLinkModelManual') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link model (manual)</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entryAgentModelDraft}
+            onChange={setEntryAgentModelDraft}
+            onSubmit={(v: string) => {
+              const model = v.trim();
+              if (!model) {
+                return;
+              }
+              setEntryAgentModelDraft(model);
+              setEntryAgent(withModel(entryAgent, model));
+              setPhase('promptGlobalPrompt');
+            }}
+            placeholder="for example composer-2.5"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptGlobalPrompt') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global prompt config (optional)</Text>
+        <SelectableList
+          items={[
+            { label: 'Set global prompt', value: 'yes' },
+            { label: 'Skip global prompt', value: 'no' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'yes') {
+              setPhase('promptGlobalSystem');
+            } else {
+              setGlobalPrompt(undefined);
+              setPhase('promptLinkPrompt');
+            }
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'promptGlobalSystem') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global prompt.systemPrompt (optional)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalSystemPromptDraft}
+            onChange={setGlobalSystemPromptDraft}
+            onSubmit={(v: string) => {
+              setGlobalSystemPromptDraft(v);
+              setPhase('promptGlobalTemperature');
+            }}
+            placeholder="system prompt"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptGlobalTemperature') {
+    const invalid = isInvalidOptionalNumberDraft(globalTemperatureDraft);
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global prompt.temperature (optional number)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid number or leave empty.</Text>
+        ) : null}
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalTemperatureDraft}
+            onChange={setGlobalTemperatureDraft}
+            onSubmit={(v: string) => {
+              setGlobalTemperatureDraft(v);
+              if (isInvalidOptionalNumberDraft(v)) {
+                return;
+              }
+              setPhase('promptGlobalMaxTokens');
+            }}
+            placeholder="for example 0.2"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptGlobalMaxTokens') {
+    const invalid = isInvalidOptionalIntegerDraft(globalMaxTokensDraft);
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global prompt.maxTokens (optional integer)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid integer or leave empty.</Text>
+        ) : null}
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={globalMaxTokensDraft}
+            onChange={setGlobalMaxTokensDraft}
+            onSubmit={(v: string) => {
+              setGlobalMaxTokensDraft(v);
+              if (isInvalidOptionalIntegerDraft(v)) {
+                return;
+              }
+              setGlobalPrompt(
+                buildPromptConfig(
+                  globalSystemPromptDraft,
+                  globalTemperatureDraft,
+                  v,
+                ),
+              );
+              setPhase('promptLinkPrompt');
+            }}
+            placeholder="for example 1200"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptLinkPrompt') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link prompt override (optional)</Text>
+        <SelectableList
+          items={[
+            { label: 'Set per-link prompt override', value: 'yes' },
+            { label: 'Skip per-link prompt override', value: 'no' },
+          ]}
+          onSelect={(v) => {
+            if (v === 'yes') {
+              setPhase('promptLinkSystem');
+            } else {
+              setEntryPrompt(undefined);
+              void runCommit();
+            }
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'promptLinkSystem') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link prompt.systemPrompt (optional)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entrySystemPromptDraft}
+            onChange={setEntrySystemPromptDraft}
+            onSubmit={(v: string) => {
+              setEntrySystemPromptDraft(v);
+              setPhase('promptLinkTemperature');
+            }}
+            placeholder="system prompt override"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptLinkTemperature') {
+    const invalid = isInvalidOptionalNumberDraft(entryTemperatureDraft);
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link prompt.temperature (optional number)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid number or leave empty.</Text>
+        ) : null}
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entryTemperatureDraft}
+            onChange={setEntryTemperatureDraft}
+            onSubmit={(v: string) => {
+              setEntryTemperatureDraft(v);
+              if (isInvalidOptionalNumberDraft(v)) {
+                return;
+              }
+              setPhase('promptLinkMaxTokens');
+            }}
+            placeholder="for example 0.2"
+            focus
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === 'promptLinkMaxTokens') {
+    const invalid = isInvalidOptionalIntegerDraft(entryMaxTokensDraft);
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link prompt.maxTokens (optional integer)</Text>
+        <Text dimColor>Leave empty to skip.</Text>
+        {invalid ? (
+          <Text color="red">Enter a valid integer or leave empty.</Text>
+        ) : null}
+        <Box marginTop={1}>
+          <Text color="cyan">› </Text>
+          <TextInput
+            value={entryMaxTokensDraft}
+            onChange={setEntryMaxTokensDraft}
+            onSubmit={(v: string) => {
+              setEntryMaxTokensDraft(v);
+              if (isInvalidOptionalIntegerDraft(v)) {
+                return;
+              }
+              setEntryPrompt(
+                buildPromptConfig(
+                  entrySystemPromptDraft,
+                  entryTemperatureDraft,
+                  v,
+                ),
+              );
+              void runCommit();
+            }}
+            placeholder="for example 1200"
+            focus
+          />
+        </Box>
       </Box>
     );
   }

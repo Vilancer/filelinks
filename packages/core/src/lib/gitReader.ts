@@ -18,3 +18,16 @@ export function getStagedFilePaths(cwd: string): string[] {
   }
   return s.split('\0').filter(Boolean);
 }
+
+export function getStagedDiffForPaths(
+  cwd: string,
+  repoRelativePaths: string[],
+): string {
+  if (repoRelativePaths.length === 0) {
+    return '';
+  }
+  return execFileSync('git', ['diff', '--cached', '--', ...repoRelativePaths], {
+    cwd,
+    encoding: 'utf8',
+  });
+}

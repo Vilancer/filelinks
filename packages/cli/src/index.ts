@@ -21,5 +21,8 @@ function isMainModule(): boolean {
 }
 
 if (isMainModule()) {
-  runCli(process.argv);
+  runCli(process.argv).catch((e: unknown) => {
+    console.error(e);
+    process.exitCode = 1;
+  });
 }

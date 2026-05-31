@@ -1,6 +1,17 @@
 # filelinks
 
+[![Cursor provider](https://img.shields.io/badge/Provider-Cursor-6D6DF6)](https://cursor.com)
+
 A language-agnostic tool for declaring semantic relationships between files — so your AI agent, git hook, or editor knows what to check when something changes.
+
+## v1.1 release highlights
+
+- Cursor-backed agent runs from `filelinks check --run-agents`
+- Agent run policies (`trigger-only`, `trigger-or-affects`)
+- Provider/runtime config (`local` + `cwd`, `cloud` + `repos`)
+- Interactive `filelinks add` wizard for agent/prompt/model setup with searchable model variants
+
+Release notes: [`docs/releases/v1.1.0.md`](docs/releases/v1.1.0.md)
 
 ## Install
 
@@ -49,6 +60,79 @@ filelinks check --json
 filelinks check --cwd /path/to/repo --config ./my/filelinks.config.ts
 ```
 
+#### Running agents (v1.1)
+
+**`filelinks check --run-agents`** is opt-in: the CLI runs the usual staged **check** (violations, exit code on `severity: 'error'`), then invokes Cursor agents for links that match the run policy.
+
+**When agents run:** default policy is **`trigger-only`** unless overridden globally or per-link. A link is eligible when policy conditions match staged coverage. With **`trigger-or-affects`**, a link runs when either trigger-side or affect-side paths are staged. **Missing companion files on disk do not block** an agent run — violations are reported separately; agents still run when policy allows.
+
+**Authentication precedence for Cursor provider:**
+
+1. `--cursor-api-key` (check command)
+2. `CURSOR_API_KEY` in environment
+3. `CURSOR_API_KEY` in `.env.local` under `--cwd`
+4. `CURSOR_API_KEY` in `.env` under `--cwd`
+
+**Machine-readable output:** with **`--json --run-agents`**, the JSON payload includes an optional **`agentRuns`** array (per-link summaries) after agent execution. If the Cursor API key is missing, every policy-eligible link still gets an **`agentRuns`** entry with **`status: 'error'`** (not only the first link).
+
+**Prompt `temperature` / `maxTokens` (v1.1):** These optional fields are merged into config like other `prompt` settings, but they are **not** passed to Cursor **`Agent.create`** in v1.1. They appear as metadata lines in the assembled agent prompt text only. Use them as hints for the agent in the prompt until a future release wires SDK generation options (if supported).
+
+**Cloud `agent.cloud.repos` (v1.1):** Entries may be full repository URLs (`https://…` or `http://…`), which are passed through unchanged. Bare **`org/repo`** strings are treated as **GitHub shorthand** and expanded to `https://github.com/org/repo`. For GitLab, Bitbucket, or self-hosted hosts, use a full URL.
+
+Examples:
+
+```bash
+filelinks check --run-agents
+filelinks check --run-agents --cursor-api-key "$CURSOR_API_KEY"
+filelinks check --json --run-agents
+```
+
+Example config (global defaults + per-link override):
+
+```typescript
+import { defineLinks } from '@filelinks/core';
+
+export default defineLinks(
+  [
+    {
+      trigger: 'apps/api/src/routes/user.ts',
+      affects: [
+        { file: 'apps/api/docs/openapi.yaml', reason: 'Keep OpenAPI in sync' },
+      ],
+      agent: {
+        runPolicy: 'trigger-or-affects',
+        provider: 'cursor',
+        runtime: 'local',
+        model: 'composer-2.5',
+        modelParams: [{ id: 'fast', value: 'true' }],
+        local: { cwd: '/path/to/your/repo' },
+      },
+    },
+    {
+      trigger: 'packages/web/**',
+      affects: [{ file: 'packages/web/README.md', reason: 'Update docs' }],
+      agent: {
+        provider: 'cursor',
+        runtime: 'cloud',
+        model: 'composer-2.5',
+        cloud: { repos: ['org/your-repo'] },
+      },
+    },
+  ],
+  {
+    agent: {
+      runPolicy: 'trigger-only',
+      provider: 'cursor',
+      runtime: 'local',
+      model: 'composer-2.5',
+      local: { cwd: '.' },
+    },
+  },
+);
+```
+
+For contributor smoke tests, CI notes, and the linked-consumer workflow, see **`CONTRIBUTING.md`** → **AI agents (v1.1)**.
+
 ### `filelinks list`
 
 Print all declared links (table, or **`--json`**).
@@ -60,7 +144,7 @@ filelinks list --json
 
 ### `filelinks add`
 
-Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then **create or rewrite** `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
+Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with runtime selection (**local** `cwd` or **cloud** `repos`). The wizard also supports model selection (live provider `listModels` when available, with fallback options), meaningful variant labels (for example `default`, `Standard`, `Fast`), and debounced input search for large model catalogs. You can also set optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`). Finally, create or rewrite `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
 
 ```bash
 filelinks add
