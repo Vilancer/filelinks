@@ -20,7 +20,7 @@ Planning and deep maps live under **`.planning/`** (roadmap, requirements, `code
 | **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                                                     |
 | **Prettier**                                                                                                            | **`.prettierrc`**                                                                                                                     |
 | **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                                                               |
-| **AI agents (v1.1)** — `check --run-agents`, config, smoke                                                              | **README.md** → _Running agents (v1.1)_; this file → _AI agents (v1.1)_ below                                                         |
+| **AI agents (v1.1 shipped)** — `check --run-agents`, config, smoke                                                      | **README.md** → _Running agents (v1.1)_; this file → _AI agents (v1.1)_ below                                                         |
 
 **Quick conventions:** Public API from each package’s **`src/index.ts`**. Library code under **`packages/<name>/src/lib/`** with specs as **`*.spec.ts`** beside sources. Build output paths are per-package **`project.json`** → **`targets.build.options.outputPath`** (CLI: **`packages/cli/dist/`**, core: **`packages/core/dist/`**). If **`ARCHITECTURE.md`** or **`TESTING.md`** disagree with **`project.json`** or this file, treat the repo config and **`AGENTS.md`** as current.
 
@@ -130,6 +130,15 @@ To skip hooks in an emergency: `git commit --no-verify` (use sparingly).
 
 User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **README.md** → _Running agents (v1.1)_.
 
+### API key resolution (CLI)
+
+For `filelinks check --run-agents`, Cursor credentials resolve in this order:
+
+1. `--cursor-api-key`
+2. `CURSOR_API_KEY` from environment
+3. `.env.local` in the effective `--cwd`
+4. `.env` in the effective `--cwd`
+
 ### Manual smoke (real Cursor)
 
 1. Export **`CURSOR_API_KEY`** (Cursor dashboard → API keys).
@@ -143,7 +152,8 @@ User-facing flag, config shape, and **`CURSOR_API_KEY`** are documented in **REA
    Use **`--json --run-agents`** to inspect the optional **`agentRuns`** array.
 
 4. If using `filelinks add`, verify generated config includes the expected `agent` blocks (global and/or per-link) before smoke runs.
-5. If testing model/prompt wizard paths, verify generated `agent.model` and `prompt` fields in both global and per-link scopes.
+5. If testing model/prompt wizard paths, verify generated `agent.model`, optional `agent.modelParams`, and `prompt` fields in both global and per-link scopes.
+6. For large model catalogs, use the add wizard's search field (debounced filtering) to quickly locate variants.
 
 ### CI and unit tests
 
@@ -154,6 +164,40 @@ CI and pre-commit **do not** call the live Cursor API. Agent behavior is covered
 - **`packages/core/src/lib/providers/cursorProvider.spec.ts`** — provider errors and SDK boundary (mocked).
 
 Run **`pnpm test`** and **`pnpm run cli:test:e2e`** from the repo root after CLI/core changes.
+
+## Releasing a milestone (main + tag + GitHub release)
+
+Use this flow after milestone work is merged to `main`.
+
+1. Ensure `main` is up to date and clean:
+
+   ```bash
+   git checkout main
+   git pull --ff-only
+   git status
+   ```
+
+2. Create annotated tag:
+
+   ```bash
+   git tag -a v1.1.0 -m "filelinks v1.1.0"
+   ```
+
+3. Create GitHub release from prepared notes:
+
+   ```bash
+   gh release create v1.1.0 \
+     --title "filelinks v1.1.0" \
+     --notes-file docs/releases/v1.1.0.md
+   ```
+
+4. Push tag (if not already pushed by `gh release create` in your setup):
+
+   ```bash
+   git push origin v1.1.0
+   ```
+
+Keep release notes in [`docs/releases/v1.1.0.md`](docs/releases/v1.1.0.md) updated before running the release commands.
 
 ### Testing the CLI in another project
 
