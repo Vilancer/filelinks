@@ -1,0 +1,108 @@
+# Roadmap: filelinks
+
+**Defined:** 2026-05-21  
+**Milestone:** v1.1 — AI agent integration (Cursor SDK, shipped 2026-05-31)  
+**Continues from:** v1.0 phases 1–4 (archived)
+
+## Milestones
+
+- ✅ **[v1.0 MVP](milestones/v1.0-ROADMAP.md)** — Phases 1–4 (shipped 2026-04-06)
+- ✅ **[v1.1 AI agent integration](milestones/v1.1-ROADMAP.md)** — Phases 5–7 (shipped 2026-05-31)
+
+## Phases
+
+### Phase 5: Agent policy & schema
+
+**Goal:** Config and core logic know _when_ an agent may run for a link—beyond “trigger is staged.”
+
+**Requirements:** AGENT-01, AGENT-02, AGENT-03
+
+**Success criteria:**
+
+1. `filelinks.config.ts` can set global default agent run policy and per-link overrides; invalid policy values fail schema decode with clear errors.
+2. Given staged paths, core reports whether trigger-side and affect-side paths matched (respecting `linkType` dir-prefix rules).
+3. `shouldRunAgentForLink` (or equivalent) returns true for `trigger-or-affects` when either side matched, false when neither side matched.
+
+**Plans:** 3/3 plans complete
+
+| Wave | Plans        | Scope                                                                                           |
+| ---- | ------------ | ----------------------------------------------------------------------------------------------- |
+| 1    | 05-01, 05-02 | Agent run policy schema + `resolveAgentRunPolicy`; `classifyStagedLinks` / `StagedLinkCoverage` |
+| 2    | 05-03        | `shouldRunAgentForLink` policy gate                                                             |
+
+---
+
+### Phase 6: Provider system & Cursor SDK
+
+**Goal:** Pluggable agent execution with Cursor as the first provider; typed missing-key errors; explicit local vs cloud runtime.
+
+**Requirements:** PROV-01, PROV-02, PROV-03, SDK-01, SDK-02, SDK-03
+
+**Success criteria:**
+
+1. `resolveAgentConfig` merges global and per-link agent settings; only `provider: 'cursor'` is implemented in v1.1.
+2. Running without `CURSOR_API_KEY` (when Cursor provider selected) throws a typed, actionable `FilelinksError`.
+3. Local runtime runs against configured `cwd` and disposes the agent; cloud runtime requires explicit `repos` (no silent local fallback).
+4. Startup failures and run failures map to distinct error types/messages suitable for CLI exit codes.
+
+**Plans:** 3/3 plans complete
+
+| Wave | Plans | Scope                                                                        |
+| ---- | ----- | ---------------------------------------------------------------------------- |
+| 1    | 06-01 | Agent execution schema + `resolveAgentConfig` / runtime validation (PROV-02) |
+| 2    | 06-02 | `AgentProvider` interface, registry, typed agent errors (PROV-01, PROV-03)   |
+| 3    | 06-03 | Cursor provider: `@cursor/sdk`, `listModels`, `run` local/cloud (SDK-01–03)  |
+
+---
+
+### Phase 7: CLI `check --run-agents`
+
+**Goal:** Developers opt in to agent edits from `check` when links match policy—including when companions are not staged.
+
+**Requirements:** CLI-05, CLI-06, CLI-07, DOC-03
+
+**Success criteria:**
+
+1. `filelinks check --run-agents` runs existing check output/exit behavior, then invokes agents only for policy-eligible matches.
+2. A link with trigger staged but missing affects still triggers an agent run when policy allows.
+3. Agent receives merged prompt, trigger diff, and affected file contents where readable.
+4. README documents flag, env vars, and agent config examples (local + cloud).
+
+**Plans:** 4 plans in 4 waves
+
+| Wave | Plans | Scope                                                                                        |
+| ---- | ----- | -------------------------------------------------------------------------------------------- |
+| 1    | 07-01 | Core: `getStagedDiffForPaths`, `readAffectedContents`, `buildAgentPrompt` + specs (CLI-07)   |
+| 2    | 07-02 | Async `runCheck` agent orchestration; eligibility via `classifyStagedLinks` (CLI-06, CLI-07) |
+| 3    | 07-03 | Commander `--run-agents`, JSON `agentRuns`, E2E flag wiring (CLI-05)                         |
+| 4    | 07-04 | README + CONTRIBUTING agent docs (DOC-03)                                                    |
+
+Plans:
+
+- [ ] `07-01-PLAN.md` — Core git diff + prompt assembly
+- [ ] `07-02-PLAN.md` — runCheck async agent loop
+- [ ] `07-03-PLAN.md` — CLI flag, JSON envelope, E2E
+- [ ] `07-04-PLAN.md` — Documentation
+
+---
+
+## Requirement coverage
+
+| Phase     | Requirements        | Count  |
+| --------- | ------------------- | ------ |
+| 5         | AGENT-01 … AGENT-03 | 3      |
+| 6         | PROV-01 … SDK-03    | 6      |
+| 7         | CLI-05 … DOC-03     | 4      |
+| **Total** |                     | **13** |
+
+## Later (post–v1.1)
+
+See **Future Requirements** in `.planning/REQUIREMENTS.md` (git-hook, graph, VS Code, Nx plugin, more providers).
+
+---
+
+_Milestone v1.1 archived: see `.planning/milestones/v1.1-ROADMAP.md` and `.planning/milestones/v1.1-REQUIREMENTS.md`_
+
+---
+
+_Roadmap created: 2026-05-21_
