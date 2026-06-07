@@ -75,18 +75,31 @@ node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures_
 
 ### Manual linked consumer (`examples/test-consumer`)
 
-Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** in local setups. In-repo copy uses **`link:../../packages/{core,cli}`**.
+**VM / Desktop path:** **`/workspace/examples/test-consumer`** (inside the filelinks repo: **`examples/test-consumer/`**).
+
+Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** on a local machine. In-repo copy uses **`link:../../packages/{core,cli}`**.
+
+**Agent rule:** After **any** change to **`packages/core`** or **`packages/cli`**, always re-verify through this project (not only unit/E2E in the monorepo):
+
+1. **`pnpm exec nx run-many -t build --projects=core,cli`** (repo root)
+2. **`cd examples/test-consumer && pnpm install --ignore-workspace`**
+3. **`pnpm run list`** → **`git add apps/api/src/routes/user.ts`** → **`pnpm run check`**
+4. For agent work: **`pnpm run check:agents`** (uses **`.env.local`**; never commit secrets)
+
+**Show the user** terminal output from steps 3–4 (or a Desktop demo) when validating CLI/core behavior or closing a feature — this is the canonical manual integration surface.
 
 ```bash
 pnpm exec nx run-many -t build --projects=core,cli
-cd examples/test-consumer && pnpm install
-git init   # once; required for filelinks check (staged paths)
+cd examples/test-consumer && pnpm install --ignore-workspace
+git init   # once per fresh clone; required for filelinks check (staged paths)
 pnpm run list
 git add apps/api/src/routes/user.ts
 pnpm run check
 ```
 
-For **`--run-agents`**, set **`CURSOR_API_KEY`** (env or **`.env.local`**) and run **`pnpm run check:agents`**. Rebuild + **`pnpm install`** in this folder after monorepo **core** / **cli** changes. See **`examples/test-consumer/README.md`**.
+**Secrets:** **`CURSOR_API_KEY`** lives in **`examples/test-consumer/.env.local`** only (listed in **`.gitignore`**). Do not commit or paste keys into tracked files, PRs, or chat.
+
+See **`examples/test-consumer/README.md`** for full detail.
 
 ### Lint caveat
 
