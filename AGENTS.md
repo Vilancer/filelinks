@@ -73,6 +73,21 @@ node packages/cli/dist/src/index.js --version
 node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
 ```
 
+### Manual linked consumer (`examples/test-consumer`)
+
+Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** in local setups. In-repo copy uses **`link:../../packages/{core,cli}`**.
+
+```bash
+pnpm exec nx run-many -t build --projects=core,cli
+cd examples/test-consumer && pnpm install
+git init   # once; required for filelinks check (staged paths)
+pnpm run list
+git add apps/api/src/routes/user.ts
+pnpm run check
+```
+
+For **`--run-agents`**, set **`CURSOR_API_KEY`** (env or **`.env.local`**) and run **`pnpm run check:agents`**. Rebuild + **`pnpm install`** in this folder after monorepo **core** / **cli** changes. See **`examples/test-consumer/README.md`**.
+
 ### Lint caveat
 
 **`pnpm exec nx run-many -t lint`** may report **`@nx/dependency-checks`** errors on **`core`** / **`git-hook`** (`vitest` / `@nx/vite` not in package **`dependencies`**). **`cli:lint`** passes; this is a known repo lint config issue, not an install problem.
