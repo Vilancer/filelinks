@@ -75,25 +75,31 @@ node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures_
 
 ### Manual linked consumer (`examples/test-consumer`)
 
-**VM / Desktop path:** **`/workspace/examples/test-consumer`** — **gitignored** (never committed). Scaffold from **`examples/test-consumer.template/`**:
+**VM / Desktop path:** **`/workspace/examples/test-consumer`**. **Not in git** — **`examples/test-consumer/`** and **`examples/test-consumer.template/`** are both in root **`.gitignore`**. Create locally when needed (or reuse an existing folder on the VM).
+
+Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** on a dev machine. Monorepo copy uses **`link:../../packages/{core,cli}`**.
+
+**One-time local scaffold** (from repo root; do not commit this tree):
 
 ```bash
-cp -r examples/test-consumer.template examples/test-consumer
+mkdir -p examples/test-consumer/apps/api/src/routes examples/test-consumer/apps/api/docs
+# package.json: name "test", link:../../packages/{core,cli}, scripts list/check/check:agents
+# filelinks.config.ts: trigger apps/api/src/routes/user.ts → apps/api/docs/openapi.yaml
+# .gitignore: node_modules/ .env .env.local
 cd examples/test-consumer && pnpm install --ignore-workspace && git init
+echo 'CURSOR_API_KEY=' > .env.local   # set key locally only
 ```
-
-Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** on a local machine. Monorepo copy uses **`link:../../packages/{core,cli}`**.
 
 **Agent rule:** After **any** change to **`packages/core`** or **`packages/cli`**, always re-verify through **`examples/test-consumer`** (not only unit/E2E in the monorepo):
 
 1. **`pnpm exec nx run-many -t build --projects=core,cli`** (repo root)
 2. **`cd examples/test-consumer && pnpm install --ignore-workspace`**
 3. **`pnpm run list`** → **`git add apps/api/src/routes/user.ts`** → **`pnpm run check`**
-4. For agent work: **`pnpm run check:agents`** (uses **`.env.local`**; never commit secrets)
+4. For agent work: **`pnpm run check:agents`** (reads **`.env.local`**)
 
-**Show the user** terminal output from steps 3–4 (or a Desktop demo) when validating CLI/core behavior or closing a feature — this is the canonical manual integration surface.
+**Show the user** terminal output from steps 3–4 (or a Desktop demo) when validating CLI/core behavior or closing a feature.
 
-**Secrets:** **`CURSOR_API_KEY`** in **`examples/test-consumer/.env.local`** only. The whole **`examples/test-consumer/`** tree is in **`.gitignore`**.
+**Secrets:** **`CURSOR_API_KEY`** only in **`examples/test-consumer/.env.local`**. Never add, commit, or track anything under **`examples/test-consumer*`**.
 
 ### Lint caveat
 
