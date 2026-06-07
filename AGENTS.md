@@ -40,3 +40,39 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 ## Planning artifacts
 
 Roadmap and requirements: **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.md`**. Phase 1 core context: **`.planning/phases/01-core-library/01-CONTEXT.md`**.
+
+## Cursor Cloud specific instructions
+
+### What runs here
+
+**filelinks** is a CLI/library monorepo — no HTTP server or database. Automated verification is **`pnpm test`**, **`pnpm run cli:test:e2e`**, and building **`core`** + **`cli`**. Manual smoke: **`filelinks list`** / **`filelinks check`** against a git repo with staged files.
+
+### Toolchain
+
+- **pnpm** `10.32.1` via **`corepack prepare pnpm@10.32.1 --activate`** (pinned in root **`package.json`**).
+- **Node** 20+ (VM uses 22.x). No **`.nvmrc`** in repo.
+- **`git`** is required only for real **`filelinks check`** (staged paths); unit/E2E tests mock git.
+
+### Native dependency: `sqlite3`
+
+The Cursor SDK pulls in **`sqlite3`** (native bindings). pnpm 10 blocks its install script unless listed in **`pnpm-workspace.yaml`** → **`allowBuilds`**. Without it, **`pnpm run cli:test:e2e`** fails loading **`@filelinks/core`**. After **`pnpm install`**, run **`pnpm exec nx run-many -t build --projects=core,cli`** before using the **`filelinks`** bin (root **`node_modules/.bin/filelinks`** warns until **`packages/cli/dist/`** exists).
+
+### Optional services
+
+| Service                           | When needed                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Cursor API** (`CURSOR_API_KEY`) | Manual **`filelinks check --run-agents`** only; CI mocks the provider                       |
+| **Verdaccio**                     | **`pnpm exec nx run filelinks:local-registry`** → `http://localhost:4873` (publish testing) |
+| **Nx Cloud**                      | **`pnpm run test:ci`** atomization only                                                     |
+
+### Hello-world smoke (from repo root)
+
+```bash
+pnpm exec nx run-many -t build --projects=core,cli
+node packages/cli/dist/src/index.js --version
+node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
+```
+
+### Lint caveat
+
+**`pnpm exec nx run-many -t lint`** may report **`@nx/dependency-checks`** errors on **`core`** / **`git-hook`** (`vitest` / `@nx/vite` not in package **`dependencies`**). **`cli:lint`** passes; this is a known repo lint config issue, not an install problem.
