@@ -143,6 +143,7 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 vitest.config.*.timestamp*
+tmp/
 
 # Manual test consumer — local/env only (never commit; secrets + nested git)
 examples/test-consumer/
