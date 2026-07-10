@@ -19,8 +19,8 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: PR number to review (optional when run from a PR branch; must target main)
-        required: false
+        description: PR number to review (required for workflow_dispatch; must target main)
+        required: true
         type: number
 
 permissions:
@@ -58,12 +58,11 @@ jobs:
             echo "number=${PR_NUMBER_EVENT}" >> "$GITHUB_OUTPUT"
             echo "head_sha=${HEAD_SHA_EVENT}" >> "$GITHUB_OUTPUT"
           else
-            if [ -n "${PR_NUMBER_INPUT}" ]; then
-              PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER_INPUT}")"
-            else
-              PR_NUM="$(gh pr view --json number -q .number)"
-              PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUM}")"
+            if [ -z "${PR_NUMBER_INPUT}" ]; then
+              echo "::error::pr_number is required for workflow_dispatch (no checkout yet for gh pr view)"
+              exit 1
             fi
+            PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER_INPUT}")"
 
             BASE_REF="$(echo "$PR_JSON" | jq -r .base.ref)"
             if [ "$BASE_REF" != "main" ]; then
