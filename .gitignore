@@ -147,3 +147,6 @@ vitest.config.*.timestamp*
 # Manual test consumer — local/env only (never commit; secrets + nested git)
 examples/test-consumer/
 examples/test-consumer.template/
+
+# Local GSD / planning artifacts (keep on disk; do not publish)
+.planning/
