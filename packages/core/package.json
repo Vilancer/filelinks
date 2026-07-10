@@ -1,6 +1,6 @@
 {
   "name": "@vilancer/filelinks-core",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Core library for filelinks — config schema, staged link matching, and agent helpers",
   "type": "commonjs",
   "main": "./dist/src/index.js",

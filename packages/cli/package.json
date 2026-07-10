@@ -1,6 +1,6 @@
 {
   "name": "@vilancer/filelinks",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "CLI for declaring and checking semantic file links in a git workspace",
   "type": "module",
   "main": "./dist/src/index.js",
