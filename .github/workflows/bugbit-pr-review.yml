@@ -1,5 +1,5 @@
 # PR code review via bugbit (Cursor SDK + custom tools).
-# https://github.com/Vilancer/bugbit — pin commit SHA (Marketplace: vilancer-bugbit)
+# https://github.com/Vilancer/bugbit — pin @v1 (Marketplace: vilancer-bugbit)
 #
 # Secrets (Settings → Secrets and variables → Actions):
 #   CURSOR_API_KEY — reuse existing secret; passed to bugbit as cursor-api-key
@@ -93,8 +93,7 @@ jobs:
           persist-credentials: false
 
       - name: Run bugbit
-        # Pin to v1.1.1 (tag v1 → 6ccf486)
-        uses: Vilancer/bugbit@6ccf486a42256fe738d03b786bcdec9e1ff9015e
+        uses: Vilancer/bugbit@v1
         with:
           cursor-api-key: ${{ secrets.CURSOR_API_KEY }}
           github-token: ${{ github.token }}
