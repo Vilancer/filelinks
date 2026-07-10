@@ -6,8 +6,8 @@
 #
 # github-token defaults to ${{ github.token }} (needs pull-requests: write below).
 #
-# Runs on PR open/reopen/ready-for-review (target: main), or manually via workflow_dispatch
-# (pass pr-number to bugbit; checkout still uses the resolved PR head SHA).
+# Runs on PR open/reopen/ready-for-review (target: main), or manually via workflow_dispatch.
+# Intentionally omits synchronize to limit review quota; re-run via workflow_dispatch.
 
 name: PR Review (bugbit)
 
@@ -58,10 +58,6 @@ jobs:
             echo "number=${PR_NUMBER_EVENT}" >> "$GITHUB_OUTPUT"
             echo "head_sha=${HEAD_SHA_EVENT}" >> "$GITHUB_OUTPUT"
           else
-            if [ -z "${PR_NUMBER_INPUT}" ]; then
-              echo "::error::pr_number is required for workflow_dispatch (no checkout yet for gh pr view)"
-              exit 1
-            fi
             PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER_INPUT}")"
 
             BASE_REF="$(echo "$PR_JSON" | jq -r .base.ref)"
