@@ -126,7 +126,9 @@ export async function runCli(argv: string[]): Promise<void> {
 
   program
     .command('add')
-    .description('Interactively add a link to the config file')
+    .description(
+      'Interactively add a link (creates filelinks.config.ts if missing)',
+    )
     .action(async function (this: Command) {
       try {
         const g = globalOpts(this);

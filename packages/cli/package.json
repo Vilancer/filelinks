@@ -1,7 +1,7 @@
 {
   "name": "@vilancer/filelinks",
-  "version": "1.0.1",
-  "description": "CLI (bin: filelinks) to check declared file links against staged git changes; pair with @vilancer/filelinks-core for defineLinks config",
+  "version": "1.0.3",
+  "description": "CLI for filelinks: check staged git file-links and optionally run Cursor AI agents (--run-agents). filelinks add creates config if missing. Install with @vilancer/filelinks-core.",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -18,6 +18,7 @@
     "git",
     "staged",
     "file-relationships",
+    "ai",
     "cursor",
     "agents",
     "monorepo",

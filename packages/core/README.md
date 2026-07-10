@@ -1,20 +1,32 @@
 # @vilancer/filelinks-core
 
-Core library for **filelinks** — TypeScript config schema (`defineLinks`), git staged-path helpers, link matching, and Cursor agent utilities.
+Library for **[filelinks](https://www.npmjs.com/package/@vilancer/filelinks)** — the tool that declares file-to-file relationships, checks them against **staged git** changes, and can run **Cursor AI agents** to update linked files.
 
-Your app’s `filelinks.config.ts` **must** import from this package. The CLI lives in **[`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks)** (bin: `filelinks`).
+This package is what your app imports. The CLI binary is **[`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks)** (`filelinks` on the PATH).
 
-## Install both packages
+## Why you need this package
+
+`filelinks.config.ts` lives in **your** project and must resolve:
+
+```typescript
+import { defineLinks } from '@vilancer/filelinks-core';
+```
+
+Install **both**:
 
 ```bash
 pnpm add -D @vilancer/filelinks @vilancer/filelinks-core
+# or: npm install --save-dev @vilancer/filelinks @vilancer/filelinks-core
 ```
 
-```bash
-npm install --save-dev @vilancer/filelinks @vilancer/filelinks-core
-```
+## What this library provides
 
-## Config
+- **`defineLinks`** — typed config export (links + global options)
+- **Config loading** — `loadFileLinksConfig` (jiti loads `.ts` configs)
+- **Staged matching** — `matchStagedLinks` / `classifyStagedLinks` (minimatch + `linkType`)
+- **AI / Cursor agents** — prompt assembly, provider registry, run policies, Cursor SDK integration used by `filelinks check --run-agents`
+
+## Config example (with AI agent)
 
 ```typescript
 import { defineLinks } from '@vilancer/filelinks-core';
@@ -22,34 +34,45 @@ import { defineLinks } from '@vilancer/filelinks-core';
 export default defineLinks(
   [
     {
-      trigger: 'src/**/*.ts',
-      affects: [{ file: 'docs/api.md', reason: 'Keep docs in sync' }],
+      trigger: 'apps/api/src/routes/user.ts',
+      affects: [
+        { file: 'apps/api/docs/openapi.yaml', reason: 'Keep OpenAPI in sync' },
+      ],
       severity: 'warn',
+      agent: {
+        provider: 'cursor',
+        runtime: 'local',
+        model: 'composer-2.5',
+        runPolicy: 'trigger-or-affects',
+        local: { cwd: '.' },
+      },
     },
   ],
-  { prompt: { temperature: 0.2 } },
+  {
+    agent: {
+      provider: 'cursor',
+      runtime: 'local',
+      model: 'composer-2.5',
+      local: { cwd: '.' },
+    },
+    prompt: { temperature: 0.2 },
+  },
 );
 ```
 
-Then use the CLI:
+Then run the CLI from [`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks):
 
 ```bash
-filelinks list
+filelinks add                 # creates filelinks.config.ts if missing
 filelinks check
+filelinks check --run-agents  # Cursor AI updates for policy-eligible links
 ```
 
-## Package roles
+## Related package
 
-| Package                                       | Role                              |
-| --------------------------------------------- | --------------------------------- |
-| **`@vilancer/filelinks-core`** (this package) | Library API for config + matching |
-| **`@vilancer/filelinks`**                     | CLI binary consumers run          |
-
-## Main exports
-
-- `defineLinks` — build a typed config export
-- `loadFileLinksConfig` — load `filelinks.config.ts` via jiti
-- `matchStagedLinks` / `classifyStagedLinks` — staged-path matching
-- Agent helpers — prompt assembly, Cursor provider, run policy
+| Package                               | npm                                                           | Role                                        |
+| ------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| **`@vilancer/filelinks-core`** (this) | [npm](https://www.npmjs.com/package/@vilancer/filelinks-core) | Library API                                 |
+| **`@vilancer/filelinks`**             | [npm](https://www.npmjs.com/package/@vilancer/filelinks)      | CLI: `check`, `list`, `add`, `--run-agents` |
 
 Full docs: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks).

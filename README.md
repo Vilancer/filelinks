@@ -1,8 +1,12 @@
 # filelinks
 
 [![Cursor provider](https://img.shields.io/badge/Provider-Cursor-6D6DF6)](https://cursor.com)
+[![npm CLI](https://img.shields.io/npm/v/@vilancer/filelinks?label=%40vilancer%2Ffilelinks)](https://www.npmjs.com/package/@vilancer/filelinks)
+[![npm core](https://img.shields.io/npm/v/@vilancer/filelinks-core?label=%40vilancer%2Ffilelinks-core)](https://www.npmjs.com/package/@vilancer/filelinks-core)
 
-A language-agnostic tool for declaring semantic relationships between files — so your AI agent, git hook, or editor knows what to check when something changes.
+Declare semantic relationships between files — then **check staged git changes**, and optionally run **Cursor AI agents** to update the linked companions (`filelinks check --run-agents`).
+
+**Packages:** [`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks) (CLI) · [`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core) (`defineLinks` + agent helpers)
 
 ## v1.1 release highlights
 
@@ -15,7 +19,7 @@ Release notes: [`docs/releases/v1.1.0.md`](docs/releases/v1.1.0.md)
 
 ## Install
 
-Install the **`@vilancer/filelinks`** CLI (bin: **`filelinks`**) and, in the project where the config file lives, **`@vilancer/filelinks-core`** (your `filelinks.config.ts` imports `defineLinks` from it; Node resolves that import from **your** app’s `node_modules`, not from inside the CLI).
+Install the **[`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks)** CLI (bin: **`filelinks`**) and **[`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core)** (your `filelinks.config.ts` imports `defineLinks` from it; Node resolves that import from **your** app’s `node_modules`, not from inside the CLI).
 
 ```bash
 pnpm add -D @vilancer/filelinks @vilancer/filelinks-core
@@ -60,9 +64,9 @@ filelinks check --json
 filelinks check --cwd /path/to/repo --config ./my/filelinks.config.ts
 ```
 
-#### Running agents (v1.1)
+#### AI agents with Cursor (`--run-agents`)
 
-**`filelinks check --run-agents`** is opt-in: the CLI runs the usual staged **check** (violations, exit code on `severity: 'error'`), then invokes Cursor agents for links that match the run policy.
+**`filelinks check --run-agents`** is opt-in: after the usual staged **check**, filelinks invokes **Cursor AI agents** for links that match the agent run policy — so companions (docs, OpenAPI, READMEs, etc.) can be updated when related code is staged.
 
 **When agents run:** default policy is **`trigger-only`** unless overridden globally or per-link. A link is eligible when policy conditions match staged coverage. With **`trigger-or-affects`**, a link runs when either trigger-side or affect-side paths are staged. **Missing companion files on disk do not block** an agent run — violations are reported separately; agents still run when policy allows.
 
@@ -144,7 +148,9 @@ filelinks list --json
 
 ### `filelinks add`
 
-Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with runtime selection (**local** `cwd` or **cloud** `repos`). The wizard also supports model selection (live provider `listModels` when available, with fallback options), meaningful variant labels (for example `default`, `Standard`, `Fast`), and debounced input search for large model catalogs. You can also set optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`). Finally, create or rewrite `filelinks.config.ts` (safe full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
+Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with runtime selection (**local** `cwd` or **cloud** `repos`). The wizard also supports model selection (live provider `listModels` when available, with fallback options), meaningful variant labels (for example `default`, `Standard`, `Fast`), and debounced input search for large model catalogs. You can also set optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`).
+
+**Bootstraps the config:** if `filelinks.config.ts` is missing, **`add` creates it** with the first link (there is no separate `init` command). If the file already exists, it appends the new link (full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
 
 ```bash
 filelinks add
