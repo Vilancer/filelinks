@@ -1,5 +1,5 @@
 # PR code review via bugbit (Cursor SDK + custom tools).
-# https://github.com/Vilancer/bugbit — pin @v1 (Marketplace: vilancer-bugbit)
+# https://github.com/Vilancer/bugbit — pin commit SHA (Marketplace: vilancer-bugbit)
 #
 # Secrets (Settings → Secrets and variables → Actions):
 #   CURSOR_API_KEY — reuse existing secret; passed to bugbit as cursor-api-key
@@ -47,22 +47,23 @@ jobs:
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER_EVENT: ${{ github.event.pull_request.number }}
+          HEAD_SHA_EVENT: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number }}
         run: |
           set -euo pipefail
-          PR_JSON_FILE="${RUNNER_TEMP}/pr.json"
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
-            echo "head_sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "number=${PR_NUMBER_EVENT}" >> "$GITHUB_OUTPUT"
+            echo "head_sha=${HEAD_SHA_EVENT}" >> "$GITHUB_OUTPUT"
           else
-            if [ -n "${{ inputs.pr_number }}" ]; then
-              PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ inputs.pr_number }}")"
+            if [ -n "${PR_NUMBER_INPUT}" ]; then
+              PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER_INPUT}")"
             else
               PR_NUM="$(gh pr view --json number -q .number)"
               PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUM}")"
             fi
-
-            echo "$PR_JSON" > "$PR_JSON_FILE"
 
             BASE_REF="$(echo "$PR_JSON" | jq -r .base.ref)"
             if [ "$BASE_REF" != "main" ]; then
@@ -89,9 +90,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.head_sha }}
+          persist-credentials: false
 
       - name: Run bugbit
-        uses: Vilancer/bugbit@v1
+        # Pin to v1.1.1 (tag v1 → 6ccf486)
+        uses: Vilancer/bugbit@6ccf486a42256fe738d03b786bcdec9e1ff9015e
         with:
           cursor-api-key: ${{ secrets.CURSOR_API_KEY }}
           github-token: ${{ github.token }}
