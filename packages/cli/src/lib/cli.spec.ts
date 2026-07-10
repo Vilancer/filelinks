@@ -19,6 +19,15 @@ vi.mock('@vilancer/filelinks-core', async (importOriginal) => {
 
 import { runCheck } from './runCheck.js';
 import { runList } from './runList.js';
+import { readVersion } from './cli.js';
+
+describe('readVersion', () => {
+  it('reads version from @vilancer/filelinks package.json', () => {
+    const version = readVersion();
+    expect(version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(version).not.toBe('0.0.0');
+  });
+});
 
 describe('runCheck', () => {
   beforeEach(() => {

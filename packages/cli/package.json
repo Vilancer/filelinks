@@ -1,7 +1,7 @@
 {
   "name": "@vilancer/filelinks",
-  "version": "1.0.0",
-  "description": "CLI for declaring and checking semantic file links in a git workspace",
+  "version": "1.0.1",
+  "description": "CLI (bin: filelinks) to check declared file links against staged git changes; pair with @vilancer/filelinks-core for defineLinks config",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -12,12 +12,28 @@
     "dist",
     "README.md"
   ],
+  "keywords": [
+    "filelinks",
+    "cli",
+    "git",
+    "staged",
+    "file-relationships",
+    "cursor",
+    "agents",
+    "monorepo",
+    "devtools"
+  ],
+  "homepage": "https://github.com/Vilancer/filelinks#readme",
+  "bugs": {
+    "url": "https://github.com/Vilancer/filelinks/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Vilancer/filelinks.git"
+    "url": "https://github.com/Vilancer/filelinks.git",
+    "directory": "packages/cli"
   },
   "license": "ISC",
   "dependencies": {

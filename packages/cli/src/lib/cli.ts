@@ -11,7 +11,8 @@ import { runList } from './runList.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function readVersion(): string {
+/** Resolve published CLI version from the nearest `@vilancer/filelinks` package.json. */
+export function readVersion(): string {
   let dir = __dirname;
   for (let i = 0; i < 10; i++) {
     const candidate = join(dir, 'package.json');
@@ -21,8 +22,12 @@ function readVersion(): string {
         version?: string;
         bin?: unknown;
       };
-      /** Root workspace is also named `filelinks`; prefer the published CLI package (has `bin`). */
-      if (j.name === 'filelinks' && j.version && j.bin !== undefined) {
+      /** Prefer the published CLI package (has `bin`); name is `@vilancer/filelinks`. */
+      if (
+        j.name === '@vilancer/filelinks' &&
+        j.version &&
+        j.bin !== undefined
+      ) {
         return j.version;
       }
     }
