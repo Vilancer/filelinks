@@ -1,0 +1,97 @@
+# PR code review via bugbit (Cursor SDK + custom tools).
+# https://github.com/Vilancer/bugbit — pin @v1 (Marketplace: vilancer-bugbit)
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   CURSOR_API_KEY — reuse existing secret; passed to bugbit as cursor-api-key
+#
+# github-token defaults to ${{ github.token }} (needs pull-requests: write below).
+#
+# Runs on PR open/reopen/ready-for-review (target: main), or manually via workflow_dispatch.
+# Intentionally omits synchronize to limit review quota; re-run via workflow_dispatch.
+
+name: PR Review (bugbit)
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to review (required for workflow_dispatch; must target main)
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: bugbit-review-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bugbit_review:
+    name: bugbit review
+    # Skip fork PRs (bugbit cannot post comments) and draft PRs (save API quota).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Resolve PR head SHA
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER_EVENT: ${{ github.event.pull_request.number }}
+          HEAD_SHA_EVENT: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "number=${PR_NUMBER_EVENT}" >> "$GITHUB_OUTPUT"
+            echo "head_sha=${HEAD_SHA_EVENT}" >> "$GITHUB_OUTPUT"
+          else
+            PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER_INPUT}")"
+
+            BASE_REF="$(echo "$PR_JSON" | jq -r .base.ref)"
+            if [ "$BASE_REF" != "main" ]; then
+              echo "::error::PR #$(echo "$PR_JSON" | jq -r .number) targets '${BASE_REF}', expected 'main'"
+              exit 1
+            fi
+
+            HEAD_REPO="$(echo "$PR_JSON" | jq -r .head.repo.full_name)"
+            if [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+              echo "::error::Cannot review fork PRs (bugbit cannot post comments)"
+              exit 1
+            fi
+
+            if [ "$(echo "$PR_JSON" | jq -r .draft)" = "true" ]; then
+              echo "::error::Cannot review draft PRs"
+              exit 1
+            fi
+
+            echo "number=$(echo "$PR_JSON" | jq -r .number)" >> "$GITHUB_OUTPUT"
+            echo "head_sha=$(echo "$PR_JSON" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout PR head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Run bugbit
+        uses: Vilancer/bugbit@v1
+        with:
+          cursor-api-key: ${{ secrets.CURSOR_API_KEY }}
+          github-token: ${{ github.token }}
+          pr-number: ${{ steps.pr.outputs.number }}
+          model: grok-4.5
+          review-modes: code-review, security-review, simplify
