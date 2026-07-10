@@ -40,3 +40,67 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 ## Planning artifacts
 
 Roadmap and requirements: **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.md`**. Phase 1 core context: **`.planning/phases/01-core-library/01-CONTEXT.md`**.
+
+## Cursor Cloud specific instructions
+
+### What runs here
+
+**filelinks** is a CLI/library monorepo — no HTTP server or database. Automated verification is **`pnpm test`**, **`pnpm run cli:test:e2e`**, and building **`core`** + **`cli`**. Manual smoke: **`filelinks list`** / **`filelinks check`** against a git repo with staged files.
+
+### Toolchain
+
+- **pnpm** `10.32.1` via **`corepack prepare pnpm@10.32.1 --activate`** (pinned in root **`package.json`**).
+- **Node** 20+ (VM uses 22.x). No **`.nvmrc`** in repo.
+- **`git`** is required only for real **`filelinks check`** (staged paths); unit/E2E tests mock git.
+
+### Native dependency: `sqlite3`
+
+The Cursor SDK pulls in **`sqlite3`** (native bindings). pnpm 10 blocks its install script unless listed in **`pnpm-workspace.yaml`** → **`allowBuilds`**. Without it, **`pnpm run cli:test:e2e`** fails loading **`@filelinks/core`**. After **`pnpm install`**, run **`pnpm exec nx run-many -t build --projects=core,cli`** before using the **`filelinks`** bin (root **`node_modules/.bin/filelinks`** warns until **`packages/cli/dist/`** exists).
+
+### Optional services
+
+| Service                           | When needed                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Cursor API** (`CURSOR_API_KEY`) | Manual **`filelinks check --run-agents`** only; CI mocks the provider                       |
+| **Verdaccio**                     | **`pnpm exec nx run filelinks:local-registry`** → `http://localhost:4873` (publish testing) |
+| **Nx Cloud**                      | **`pnpm run test:ci`** atomization only                                                     |
+
+### Hello-world smoke (from repo root)
+
+```bash
+pnpm exec nx run-many -t build --projects=core,cli
+node packages/cli/dist/src/index.js --version
+node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
+```
+
+### Manual linked consumer (`examples/test-consumer`)
+
+**VM / Desktop path:** **`/workspace/examples/test-consumer`**. **Not in git** — **`examples/test-consumer/`** and **`examples/test-consumer.template/`** are both in root **`.gitignore`**. Create locally when needed (or reuse an existing folder on the VM).
+
+Mirrors a sibling **`test`** project with **`link:../filelinks/packages/{core,cli}`** on a dev machine. Monorepo copy uses **`link:../../packages/{core,cli}`**.
+
+**One-time local scaffold** (from repo root; do not commit this tree):
+
+```bash
+mkdir -p examples/test-consumer/apps/api/src/routes examples/test-consumer/apps/api/docs
+# package.json: name "test", link:../../packages/{core,cli}, scripts list/check/check:agents
+# filelinks.config.ts: trigger apps/api/src/routes/user.ts → apps/api/docs/openapi.yaml
+# .gitignore: node_modules/ .env .env.local
+cd examples/test-consumer && pnpm install --ignore-workspace && git init
+echo 'CURSOR_API_KEY=' > .env.local   # set key locally only
+```
+
+**Agent rule:** After **any** change to **`packages/core`** or **`packages/cli`**, always re-verify through **`examples/test-consumer`** (not only unit/E2E in the monorepo):
+
+1. **`pnpm exec nx run-many -t build --projects=core,cli`** (repo root)
+2. **`cd examples/test-consumer && pnpm install --ignore-workspace`**
+3. **`pnpm run list`** → **`git add apps/api/src/routes/user.ts`** → **`pnpm run check`**
+4. For agent work: **`pnpm run check:agents`** (reads **`.env.local`**)
+
+**Show the user** terminal output from steps 3–4 (or a Desktop demo) when validating CLI/core behavior or closing a feature.
+
+**Secrets:** **`CURSOR_API_KEY`** only in **`examples/test-consumer/.env.local`**. Never add, commit, or track anything under **`examples/test-consumer*`**.
+
+### Lint caveat
+
+**`pnpm exec nx run-many -t lint`** may report **`@nx/dependency-checks`** errors on **`core`** / **`git-hook`** (`vitest` / `@nx/vite` not in package **`dependencies`**). **`cli:lint`** passes; this is a known repo lint config issue, not an install problem.
