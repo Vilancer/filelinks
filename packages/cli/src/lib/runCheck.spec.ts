@@ -24,7 +24,7 @@ const mockCore = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('@filelinks/core', () => ({
+vi.mock('@vilancer/filelinks-core', () => ({
   ...mockCore,
 }));
 

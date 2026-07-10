@@ -2,7 +2,7 @@ import {
   loadFileLinksConfig,
   normalizeError,
   type FileLinkEntry,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 
 import type { ListRowJson } from './formatters.js';
 import { printListJson } from './formatters.js';

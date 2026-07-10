@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import * as path from 'node:path';
 
 import * as fg from 'fast-glob';
-import { getGitRepoRoot } from '@filelinks/core';
+import { getGitRepoRoot } from '@vilancer/filelinks-core';
 
 const MAX_LIST = 50_000;
 const MAX_FILTER_RESULTS = 200;

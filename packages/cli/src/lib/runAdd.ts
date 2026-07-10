@@ -19,7 +19,7 @@ import {
   type FileLinkConfig,
   type FileLinkEntry,
   type PromptConfig,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 
 import { AddWizard } from './add-ui/AddWizard.js';
 import { resolveCursorApiKey } from './cursorApiKey.js';
@@ -59,7 +59,7 @@ export function serializeFileLinksConfig(
 ): string {
   const linksStr = JSON.stringify(links, null, 2);
   const configStr = JSON.stringify(config, null, 2);
-  return `import { defineLinks } from '@filelinks/core';\n\nexport default defineLinks(\n${linksStr},\n${configStr},\n);\n`;
+  return `import { defineLinks } from '@vilancer/filelinks-core';\n\nexport default defineLinks(\n${linksStr},\n${configStr},\n);\n`;
 }
 
 export type RunAddOpts = {

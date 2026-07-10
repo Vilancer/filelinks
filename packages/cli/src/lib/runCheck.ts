@@ -12,7 +12,7 @@ import {
   resolveAgentRunPolicy,
   resolvePrompt,
   shouldRunAgentForLink,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 import { resolveCursorApiKey } from './cursorApiKey.js';
 
 import type { AgentRunSummaryJson, CheckViolationJson } from './formatters.js';

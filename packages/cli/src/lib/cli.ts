@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { normalizeError } from '@filelinks/core';
+import { normalizeError } from '@vilancer/filelinks-core';
 import { Command } from 'commander';
 
 import { runAdd } from './runAdd.js';

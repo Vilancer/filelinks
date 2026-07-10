@@ -1,6 +1,7 @@
 {
-  "name": "filelinks",
+  "name": "filelinks-monorepo",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -58,7 +59,7 @@
   },
   "nx": {},
   "dependencies": {
-    "@filelinks/core": "link:packages/core",
-    "filelinks": "link:packages/cli"
+    "@vilancer/filelinks-core": "link:packages/core",
+    "@vilancer/filelinks": "link:packages/cli"
   }
 }

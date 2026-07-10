@@ -2,9 +2,9 @@
 
 ## Repository layout
 
-- **`packages/core`** — `@filelinks/core`: schema (`defineLinks`), `linkType` helpers, config loader (**jiti**), git reader, `matchStagedLinks`, `resolvePrompt`.
-- **`packages/cli`** — `filelinks` npm package (CLI; Phase 4 MVP).
-- **`packages/git-hook`** — `@filelinks/git-hook` (post-v1 hook helpers).
+- **`packages/core`** — `@vilancer/filelinks-core`: schema (`defineLinks`), `linkType` helpers, config loader (**jiti**), git reader, `matchStagedLinks`, `resolvePrompt`.
+- **`packages/cli`** — `@vilancer/filelinks` (CLI; bin name `filelinks`).
+- **`packages/git-hook`** — `@vilancer/filelinks-git-hook` (post-v1 hook helpers).
 
 Planning and deep maps live under **`.planning/`** (roadmap, requirements, `codebase/*.md`).
 
@@ -16,7 +16,7 @@ Planning and deep maps live under **`.planning/`** (roadmap, requirements, `code
 | **Packages & data flow** — Nx layout, `jiti` config, matcher, tool boundaries                                           | **`.planning/codebase/ARCHITECTURE.md`**                                                                                              |
 | **Tests** — Vitest, Nx `test` / `test-ci`, spec placement, `tsconfig.spec.json`                                         | **`.planning/codebase/TESTING.md`**                                                                                                   |
 | **Product / phases** — roadmap, requirements, per-phase context                                                         | **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.md`**, and **`.planning/phases/<name>/`** (e.g. **`04-cli-mvp/04-CONTEXT.md`**) |
-| **Path aliases**                                                                                                        | **`tsconfig.base.json`** (`@filelinks/core`, etc.)                                                                                    |
+| **Path aliases**                                                                                                        | **`tsconfig.base.json`** (`@vilancer/filelinks-core`, etc.)                                                                           |
 | **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                                                     |
 | **Prettier**                                                                                                            | **`.prettierrc`**                                                                                                                     |
 | **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                                                               |
@@ -37,11 +37,11 @@ From the repo root:
 | Core only         | `pnpm exec nx run core:test` / `core:build` / `core:lint`                                                   |
 | CLI only          | `pnpm exec nx run cli:test` / `cli:build` / `cli:lint`                                                      |
 
-Path aliases: `@filelinks/core` → `packages/core/src/index.ts` (`tsconfig.base.json`).
+Path aliases: `@vilancer/filelinks-core` → `packages/core/src/index.ts` (`tsconfig.base.json`).
 
 ## Local development: this repo + another project
 
-Use a **second checkout or app** when you want to run **`filelinks`** and your own tests **without publishing**. You always wire **two** packages from this monorepo into the other project: **`@filelinks/core`** and **`filelinks`** (the CLI). Hand-written configs do `import { defineLinks } from '@filelinks/core'`; **jiti** loads that file from the **other** project’s tree, so **`@filelinks/core`** must resolve from **that** project’s **`node_modules`**. The CLI entry comes from the linked **`filelinks`** package.
+Use a **second checkout or app** when you want to run **`filelinks`** and your own tests **without publishing**. You always wire **two** packages from this monorepo into the other project: **`@vilancer/filelinks-core`** and **`@vilancer/filelinks`** (the CLI). Hand-written configs do `import { defineLinks } from '@vilancer/filelinks-core'`; **jiti** loads that file from the **other** project’s tree, so **`@vilancer/filelinks-core`** must resolve from **that** project’s **`node_modules`**. The CLI entry comes from the linked **`@vilancer/filelinks`** package.
 
 ### 1. Build (in the **filelinks** repo root)
 
@@ -97,16 +97,16 @@ Use **`--cwd`** for repo root; **`--config ./path/to/filelinks.config.ts`** if d
 ### Undo links (in the **other** project)
 
 ```bash
-pnpm unlink @filelinks/core
-pnpm unlink filelinks
+pnpm unlink @vilancer/filelinks-core
+pnpm unlink @vilancer/filelinks
 pnpm install
 ```
 
-Avoid **`pnpm link filelinks`** by bare package name in ways that pull a **global** or registry link instead of your path — that can replace a good path symlink and break local dev.
+Avoid **`pnpm link @vilancer/filelinks`** by bare package name in ways that pull a **global** or registry link instead of your path — that can replace a good path symlink and break local dev.
 
 ### Without a local clone
 
-From npm after publish: `pnpm add -D @filelinks/core filelinks` in the other project (or equivalent).
+From npm after publish: `pnpm add -D @vilancer/filelinks-core @vilancer/filelinks` in the other project (or equivalent).
 
 ## Git hooks
 
@@ -200,6 +200,38 @@ Use this flow after milestone work is merged to `main`.
    ```
 
 Keep release notes in [`docs/releases/v1.1.0.md`](docs/releases/v1.1.0.md) updated before running the release commands.
+
+## Publishing to npm
+
+Published packages (under the **`vilancer`** npm org):
+
+| Package         | npm name                   | Bin         |
+| --------------- | -------------------------- | ----------- |
+| `packages/cli`  | `@vilancer/filelinks`      | `filelinks` |
+| `packages/core` | `@vilancer/filelinks-core` | —           |
+
+Do **not** publish `packages/git-hook` yet (`private: true`).
+
+Prerequisites: `npm whoami` is an owner/member of the **`vilancer`** org; 2FA OTP ready.
+
+```bash
+# 1. Build
+pnpm exec nx run-many -t build --projects=core,cli
+
+# 2. Bump versions (example: first public 1.0.0)
+pnpm exec nx release version --specifier=1.0.0 --projects=core,cli
+
+# 3. Publish (will prompt for OTP with auth-and-writes 2FA)
+pnpm exec nx release publish --projects=core,cli
+
+# 4. Smoke
+mkdir -p /tmp/fl-smoke && cd /tmp/fl-smoke
+pnpm init
+pnpm add -D @vilancer/filelinks @vilancer/filelinks-core
+pnpm exec filelinks --version
+```
+
+Dry-run against Verdaccio: `pnpm exec nx run filelinks:local-registry`, then publish with `--registry=http://localhost:4873`.
 
 ### Testing the CLI in another project
 

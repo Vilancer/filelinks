@@ -6,7 +6,7 @@ import {
   LINK_TYPES,
   LINK_TYPE_DESCRIPTIONS,
   linkTypeForPathKinds,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 import {
   parseModelOptionKey,
   type AgentModelOption,
@@ -17,7 +17,7 @@ import {
   type FileLinkEntry,
   type LinkType,
   type PromptConfig,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 
 import { filterPaths } from '../pathCandidates.js';
 import { CliStartLogo } from '../ui/CliStartLogo.js';

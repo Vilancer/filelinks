@@ -15,14 +15,14 @@ Release notes: [`docs/releases/v1.1.0.md`](docs/releases/v1.1.0.md)
 
 ## Install
 
-Install the **`filelinks`** CLI and, in the project where the config file lives, **`@filelinks/core`** (your `filelinks.config.ts` imports `defineLinks` from it; Node resolves that import from **your** app’s `node_modules`, not from inside the CLI).
+Install the **`@vilancer/filelinks`** CLI (bin: **`filelinks`**) and, in the project where the config file lives, **`@vilancer/filelinks-core`** (your `filelinks.config.ts` imports `defineLinks` from it; Node resolves that import from **your** app’s `node_modules`, not from inside the CLI).
 
 ```bash
-pnpm add -D filelinks @filelinks/core
+pnpm add -D @vilancer/filelinks @vilancer/filelinks-core
 ```
 
 ```bash
-npm install --save-dev filelinks @filelinks/core
+npm install --save-dev @vilancer/filelinks @vilancer/filelinks-core
 ```
 
 ## Config
@@ -30,7 +30,7 @@ npm install --save-dev filelinks @filelinks/core
 Create **`filelinks.config.ts`** at the repo root (or use **`--config`** to point to another path):
 
 ```typescript
-import { defineLinks } from '@filelinks/core';
+import { defineLinks } from '@vilancer/filelinks-core';
 
 export default defineLinks(
   [
@@ -90,7 +90,7 @@ filelinks check --json --run-agents
 Example config (global defaults + per-link override):
 
 ```typescript
-import { defineLinks } from '@filelinks/core';
+import { defineLinks } from '@vilancer/filelinks-core';
 
 export default defineLinks(
   [
@@ -161,4 +161,4 @@ node packages/cli/dist/src/index.js --version
 node packages/cli/dist/src/index.js list --cwd packages/core/src/lib/__fixtures__/sample-filelinks-config
 ```
 
-Run tests: **`pnpm test`** (see **`CONTRIBUTING.md`**). The published CLI package is **ESM** (`"type": "module"`). If you use **`pnpm link filelinks`** (or a **`file:`** CLI) in another repo, install **`@filelinks/core`** in that repo too — see **Trying the CLI in another directory** in **`CONTRIBUTING.md`** for **`file:`** examples and link steps.
+Run tests: **`pnpm test`** (see **`CONTRIBUTING.md`**). The published CLI package is **ESM** (`"type": "module"`). If you use **`pnpm link filelinks`** (or a **`file:`** CLI) in another repo, install **`@vilancer/filelinks-core`** in that repo too — see **Trying the CLI in another directory** in **`CONTRIBUTING.md`** for **`file:`** examples and link steps.

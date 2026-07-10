@@ -20,8 +20,9 @@ const mockCore = vi.hoisted(() => ({
   getAgentProvider: vi.fn(),
 }));
 
-vi.mock('@filelinks/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@filelinks/core')>();
+vi.mock('@vilancer/filelinks-core', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@vilancer/filelinks-core')>();
   return {
     ...actual,
     loadFileLinksConfig: mockCore.loadFileLinksConfig,

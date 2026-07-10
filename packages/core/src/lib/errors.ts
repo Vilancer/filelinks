@@ -1,4 +1,4 @@
-/** Base error for @filelinks/core — carries a stable `code` for CLI and handlers. */
+/** Base error for @vilancer/filelinks-core — carries a stable `code` for CLI and handlers. */
 export class FilelinksError extends Error {
   readonly code: string;
   readonly cause?: unknown;
@@ -97,11 +97,7 @@ export class AgentStartupError extends FilelinksError {
     message?: string,
     options?: { cause?: unknown; details?: { isRetryable?: boolean } },
   ) {
-    super(
-      'AGENT_STARTUP_FAILED',
-      message ?? 'Agent failed to start',
-      options,
-    );
+    super('AGENT_STARTUP_FAILED', message ?? 'Agent failed to start', options);
     this.name = 'AgentStartupError';
     if (options?.details !== undefined) {
       this.details = options.details;
@@ -111,10 +107,7 @@ export class AgentStartupError extends FilelinksError {
 }
 
 export class AgentRunFailedError extends FilelinksError {
-  constructor(
-    message?: string,
-    options?: { cause?: unknown; runId?: string },
-  ) {
+  constructor(message?: string, options?: { cause?: unknown; runId?: string }) {
     const runId = options?.runId;
     const baseMessage = message ?? 'Agent run failed';
     super(

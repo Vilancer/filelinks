@@ -16,9 +16,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@filelinks/core": ["packages/core/src/index.ts"],
-      "@filelinks/git-hook": ["packages/git-hook/src/index.ts"],
-      "filelinks": ["packages/cli/src/index.ts"]
+      "@vilancer/filelinks-core": ["packages/core/src/index.ts"],
+      "@vilancer/filelinks-git-hook": ["packages/git-hook/src/index.ts"],
+      "@vilancer/filelinks": ["packages/cli/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

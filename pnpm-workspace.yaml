@@ -8,5 +8,5 @@ allowBuilds:
   sqlite3: true
   unrs-resolver: true
 overrides:
-  '@filelinks/core': link:packages/core
-  filelinks: link:packages/cli
+  '@vilancer/filelinks-core': link:packages/core
+  '@vilancer/filelinks': link:packages/cli

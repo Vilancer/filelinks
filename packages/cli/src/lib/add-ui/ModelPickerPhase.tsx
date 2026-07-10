@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
-import type { AgentModelOption } from '@filelinks/core';
+import type { AgentModelOption } from '@vilancer/filelinks-core';
 
 import { filterModelOptions } from './modelOptions.js';
 import { SelectableList } from './SelectableList.js';

@@ -4,7 +4,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 
 ## What this repo is
 
-**filelinks** is an Nx + pnpm monorepo: **`@filelinks/core`** holds config loading (**jiti**), git paths, **`matchStagedLinks`**, and **`normalizeError`**. Domain and config shapes are modeled with **Effect** (**`effect/Schema`**) as the primary typing and validation layer—define new structs/literals with `Schema.*`, decode at boundaries, and reuse exported schema-derived types. The **`filelinks`** CLI lives in **`packages/cli`** and consumes core.
+**filelinks** is an Nx + pnpm monorepo: **`@vilancer/filelinks-core`** holds config loading (**jiti**), git paths, **`matchStagedLinks`**, and **`normalizeError`**. Domain and config shapes are modeled with **Effect** (**`effect/Schema`**) as the primary typing and validation layer—define new structs/literals with `Schema.*`, decode at boundaries, and reuse exported schema-derived types. The **`@vilancer/filelinks`** CLI (bin **`filelinks`**) lives in **`packages/cli`** and consumes core.
 
 ## Commands (run from repo root)
 
@@ -33,7 +33,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 - **Effect Schema** (`effect/Schema`) is the default for **config and domain models** in core: add or change fields in `packages/core/src/lib/schema.ts` (and related modules), decode with `Schema.decodeUnknownSync` / `Schema.decodeUnknown` at load boundaries, and surface parse failures through **`normalizeError`** where appropriate. Do not introduce parallel validation stacks (e.g. Zod) for the same shapes without an explicit decision.
 - **Public API** is exported from each package’s `src/index.ts` (barrel).
 - **Specs** live as `*.spec.ts` next to sources under `packages/*/src/lib/`.
-- **No duplicated domain literals in consumers:** when CLI/UI needs domain enums or labels (for example `linkType` options), import the canonical constants/helpers from `@filelinks/core` (for example `LINK_TYPES`, `LINK_TYPE_DESCRIPTIONS`) instead of hardcoding string unions in `packages/cli`.
+- **No duplicated domain literals in consumers:** when CLI/UI needs domain enums or labels (for example `linkType` options), import the canonical constants/helpers from `@vilancer/filelinks-core` (for example `LINK_TYPES`, `LINK_TYPE_DESCRIPTIONS`) instead of hardcoding string unions in `packages/cli`.
 - **`FileLinkEntry.linkType`** is optional: `file-file` \| `dir-dir` \| `file-dir` \| `dir-file`. Triggers always use **minimatch** on repo-relative paths. Affects use minimatch; for **`file-dir`** / **`dir-dir`**, a directory affect is also satisfied by any staged path under that directory (prefix rule). Configs **without** `linkType` keep minimatch-only affect matching—stay backward compatible.
 - Follow **ESLint** (Nx flat config) and **Prettier** (`.prettierrc`). Pre-commit runs **lint-staged** + **`pnpm test`** + **`pnpm run cli:test:e2e`** via Husky; **commit-msg** enforces **Conventional Commits** (`feat`, `fix`, `chore`, …).
 
@@ -55,7 +55,7 @@ Roadmap and requirements: **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.
 
 ### Native dependency: `sqlite3`
 
-The Cursor SDK pulls in **`sqlite3`** (native bindings). pnpm 10 blocks its install script unless listed in **`pnpm-workspace.yaml`** → **`allowBuilds`**. Without it, **`pnpm run cli:test:e2e`** fails loading **`@filelinks/core`**. After **`pnpm install`**, run **`pnpm exec nx run-many -t build --projects=core,cli`** before using the **`filelinks`** bin (root **`node_modules/.bin/filelinks`** warns until **`packages/cli/dist/`** exists).
+The Cursor SDK pulls in **`sqlite3`** (native bindings). pnpm 10 blocks its install script unless listed in **`pnpm-workspace.yaml`** → **`allowBuilds`**. Without it, **`pnpm run cli:test:e2e`** fails loading **`@vilancer/filelinks-core`**. After **`pnpm install`**, run **`pnpm exec nx run-many -t build --projects=core,cli`** before using the **`filelinks`** bin (root **`node_modules/.bin/filelinks`** warns until **`packages/cli/dist/`** exists).
 
 ### Optional services
 

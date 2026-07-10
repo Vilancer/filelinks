@@ -1,4 +1,4 @@
-import type { AgentModelOption } from '@filelinks/core';
+import type { AgentModelOption } from '@vilancer/filelinks-core';
 
 const MAX_FILTER_RESULTS = 200;
 

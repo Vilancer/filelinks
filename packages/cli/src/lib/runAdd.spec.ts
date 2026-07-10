@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AgentMissingApiKeyError,
   validateResolvedAgentConfig,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 
 import {
   listWizardModels,
@@ -40,7 +40,9 @@ describe('serializeFileLinksConfig', () => {
       ],
       {},
     );
-    expect(ts).toContain("import { defineLinks } from '@filelinks/core'");
+    expect(ts).toContain(
+      "import { defineLinks } from '@vilancer/filelinks-core'",
+    );
     expect(ts).toContain('export default defineLinks');
   });
 
@@ -260,9 +262,15 @@ describe('summarizeExistingGlobalAgent', () => {
   it('returns compact summary for existing global agent', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'filelinks-add-'));
     const cfgPath = path.join(tmp, 'filelinks.config.ts');
+    const scopeDir = path.join(tmp, 'node_modules', '@vilancer');
+    fs.mkdirSync(scopeDir, { recursive: true });
+    fs.symlinkSync(
+      path.resolve(__dirname, '../../../core'),
+      path.join(scopeDir, 'filelinks-core'),
+    );
     fs.writeFileSync(
       cfgPath,
-      `import { defineLinks } from '@filelinks/core';
+      `import { defineLinks } from '@vilancer/filelinks-core';
 
 export default defineLinks(
   [{ trigger: 'a.ts', affects: [{ file: 'b.ts', reason: 'sync' }] }],

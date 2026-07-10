@@ -1,9 +1,22 @@
 {
-  "name": "@filelinks/core",
+  "name": "@vilancer/filelinks-core",
   "version": "0.0.1",
+  "description": "Core library for filelinks — config schema, staged link matching, and agent helpers",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vilancer/filelinks.git"
+  },
+  "license": "ISC",
   "dependencies": {
     "@cursor/sdk": "^1.0.17",
     "effect": "^3.21.0",

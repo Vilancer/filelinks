@@ -1,6 +1,7 @@
 {
-  "name": "filelinks",
+  "name": "@vilancer/filelinks",
   "version": "0.0.1",
+  "description": "CLI for declaring and checking semantic file links in a git workspace",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -11,8 +12,16 @@
     "dist",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vilancer/filelinks.git"
+  },
+  "license": "ISC",
   "dependencies": {
-    "@filelinks/core": "workspace:*",
+    "@vilancer/filelinks-core": "workspace:*",
     "commander": "^13.1.0",
     "fast-glob": "^3.3.3",
     "ink": "^5.2.1",

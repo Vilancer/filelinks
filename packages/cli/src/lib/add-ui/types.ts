@@ -2,7 +2,7 @@ import type {
   AgentSettings,
   FileLinkEntry,
   PromptConfig,
-} from '@filelinks/core';
+} from '@vilancer/filelinks-core';
 
 export type AddCommitPayload = {
   entry: FileLinkEntry;

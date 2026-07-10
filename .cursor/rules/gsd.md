@@ -11,7 +11,7 @@
 ### Constraints
 
 - **Tech stack**: TypeScript, Nx, pnpm, Vitest, ESLint — already chosen; keep new deps justified (e.g. `commander`, `minimatch`).
-- **MVP slice**: Build **`@filelinks/core` + `filelinks` CLI together** first so the tool is shippable and demoable via `npx` before hooks, AI, or editor features.
+- **MVP slice**: Build **`@vilancer/filelinks-core` + `filelinks` CLI together** first so the tool is shippable and demoable via `npx` before hooks, AI, or editor features.
 <!-- gsd-project-end -->
 
 <!-- gsd-stack-start source:codebase/STACK.md -->
@@ -46,8 +46,8 @@
 
 ## Path aliases (TypeScript)
 
-- `@filelinks/core` → `packages/core/src/index.ts`
-- `@filelinks/git-hook` → `packages/git-hook/src/index.ts`
+- `@vilancer/filelinks-core` → `packages/core/src/index.ts`
+- `@vilancer/filelinks-git-hook` → `packages/git-hook/src/index.ts`
 - `filelinks` → `packages/cli/src/index.ts`
 
 ## Registry and release tooling
@@ -99,11 +99,11 @@
 
 ## Packages and roles
 
-| Package             | Name (npm)            | Role                                                                  |
-| ------------------- | --------------------- | --------------------------------------------------------------------- |
-| `packages/core`     | `@filelinks/core`     | Shared core library — intended for shared logic.                      |
-| `packages/cli`      | `filelinks`           | CLI-facing package (name `filelinks` in `packages/cli/package.json`). |
-| `packages/git-hook` | `@filelinks/git-hook` | Git hook–related library.                                             |
+| Package             | Name (npm)                     | Role                                                                  |
+| ------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `packages/core`     | `@vilancer/filelinks-core`     | Shared core library — intended for shared logic.                      |
+| `packages/cli`      | `filelinks`                    | CLI-facing package (name `filelinks` in `packages/cli/package.json`). |
+| `packages/git-hook` | `@vilancer/filelinks-git-hook` | Git hook–related library.                                             |
 
 - `packages/core/src/index.ts` → `./lib/core`
 - `packages/cli/src/index.ts` → `./lib/cli`
@@ -124,7 +124,7 @@
 ## Entry points (future)
 
 - A future **CLI binary** would typically be wired through `packages/cli` (bin field / Nx executor not present yet).
-- **Git hooks** would consume `@filelinks/git-hook` from install or hook scripts (not configured in-repo yet).
+- **Git hooks** would consume `@vilancer/filelinks-git-hook` from install or hook scripts (not configured in-repo yet).
 <!-- gsd-architecture-end -->
 
 <!-- gsd-workflow-start source:GSD defaults -->
@@ -166,14 +166,14 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 
 ### Preferences for agents
 
-- Follow **`AGENTS.md`**, **`CONTRIBUTING.md`**, and **`.planning/codebase/*`** — no parallel validation stacks; import domain literals from `@filelinks/core`.
+- Follow **`AGENTS.md`**, **`CONTRIBUTING.md`**, and **`.planning/codebase/*`** — no parallel validation stacks; import domain literals from `@vilancer/filelinks-core`.
 - Run **`pnpm test`** and **`pnpm run cli:test:e2e`** before claiming done; E2E needs **`sqlite3`** in `pnpm-workspace.yaml` **`allowBuilds`** (or `pnpm approve-builds --all` on fresh installs).
 - Conventional Commits; minimal diffs; specs beside sources (`*.spec.ts`).
 
 ### Environment notes
 
 - Linked-consumer loop: rebuild **core + cli**, then `pnpm link` both in the consumer project.
-- Native **`sqlite3`** bindings required for full `@filelinks/core` load in tests (Cursor SDK transitive).
+- Native **`sqlite3`** bindings required for full `@vilancer/filelinks-core` load in tests (Cursor SDK transitive).
 
 > This section is managed by `generate-claude-profile` — do not edit manually.
 
