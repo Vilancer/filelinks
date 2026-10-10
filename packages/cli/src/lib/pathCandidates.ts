@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import * as path from 'node:path';
 
-import * as fg from 'fast-glob';
+import { globSync } from 'tinyglobby';
 import { getGitRepoRoot } from '@vilancer/filelinks-core';
 
 const MAX_LIST = 50_000;
@@ -61,11 +61,12 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
     directories: Set<string>,
   ): void => {
     // Non-git fallback only: keep traversal bounded for responsiveness.
-    const dirs = fg.sync('**/*', {
+    const dirs = globSync('**/*', {
       cwd: rootDir,
       dot: false,
       onlyDirectories: true,
       deep: 8,
+      expandDirectories: false,
       ignore: ['**/node_modules/**', '**/.git/**'],
     });
     for (const d of dirs) {
@@ -151,11 +152,12 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
       directories,
     };
   } catch {
-    const entries = fg.sync('**/*', {
+    // Directories come back with a trailing `/`.
+    const entries = globSync('**/*', {
       cwd: resolved,
       dot: false,
       onlyFiles: false,
-      markDirectories: true,
+      expandDirectories: false,
       ignore: ['**/node_modules/**', '**/.git/**'],
     });
     const out = new Set<string>();
