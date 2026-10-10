@@ -1,6 +1,6 @@
 # Agent instructions — filelinks
 
-Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (includes a **documentation map**), **`.planning/codebase/ARCHITECTURE.md`**, and **`.planning/codebase/TESTING.md`** for full detail.
+Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (includes a **documentation map**) for full detail. Deep maps (`codebase/ARCHITECTURE.md`, `codebase/TESTING.md`) are planning artifacts, not part of this repo: see _Planning artifacts_ below.
 
 ## What this repo is
 
@@ -39,7 +39,7 @@ Use this file with Cursor / other coding agents. Prefer **`CONTRIBUTING.md`** (i
 
 ## Planning artifacts
 
-Roadmap and requirements: **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.md`**. Phase 1 core context: **`.planning/phases/01-core-library/01-CONTEXT.md`**.
+Planning lives **outside this repo**, in the maintainers' agent workspace: when this repo is checked out as the workspace's `filelinks/` submodule, it is **`../.planning/`** (`ROADMAP.md`, `REQUIREMENTS.md`, `STATE.md`, `codebase/*.md`, `phases/<name>/`). `.planning/` stays in `.gitignore` here; never add planning files to this repo. If you don't have the workspace, `CONTRIBUTING.md` and this file are the source of truth.
 
 ## Cursor Cloud specific instructions
 
