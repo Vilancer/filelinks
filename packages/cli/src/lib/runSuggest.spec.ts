@@ -85,7 +85,9 @@ describe('runSuggest', () => {
     expect(mockRun).toHaveBeenCalledWith(
       expect.objectContaining({ mode: 'suggest', prompt: 'prompt' }),
     );
-    const out = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+    const out = logSpy.mock.calls
+      .map((c: unknown[]) => String(c[0]))
+      .join('\n');
     expect(out).toContain('## apps/**/*.ts');
     expect(out).toContain('docs/x.md: add the new field');
   });
