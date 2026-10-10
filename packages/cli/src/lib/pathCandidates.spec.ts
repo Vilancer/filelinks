@@ -1,5 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -69,6 +75,17 @@ describe('pathCandidates', () => {
         'apps/api',
         'apps/api/docs',
       ]);
+    });
+
+    it('keeps a symlinked directory selectable outside git', () => {
+      const dir = scratch();
+      mkdirSync(join(dir, 'shared/docs'), { recursive: true });
+      writeFileSync(join(dir, 'shared/docs/a.md'), 'x');
+      symlinkSync('shared/docs', join(dir, 'docs'));
+      const { candidates, directories } = listPathCandidatesWithMeta(dir);
+      expect(candidates).toContain('docs');
+      expect(candidates).toContain('docs/a.md');
+      expect(directories.has('docs')).toBe(true);
     });
 
     it('lists tracked and untracked files plus their directories inside git', () => {

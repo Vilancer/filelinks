@@ -52,31 +52,46 @@ export type PathCandidateMeta = {
   readonly directories: Set<string>;
 };
 
+/**
+ * Add `p` (a directory when `isDir`) and every ancestor directory of it. Deriving directories
+ * from ancestors also covers entries a walker reports only through their children, such as a
+ * symlinked directory (`docs -> shared/docs` shows up as `docs/a.md`, never as `docs/`).
+ */
+function addWithAncestors(
+  p: string,
+  isDir: boolean,
+  set: Set<string>,
+  directories: Set<string>,
+): void {
+  if (isSearchableCandidate(p)) {
+    set.add(p);
+    if (isDir) {
+      directories.add(p);
+    }
+  }
+  for (
+    let dir = path.posix.dirname(p);
+    dir !== '.' && dir !== '/';
+    dir = path.posix.dirname(dir)
+  ) {
+    if (isSearchableCandidate(dir)) {
+      set.add(dir);
+      directories.add(dir);
+    }
+  }
+}
+
+function toMeta(set: Set<string>, directories: Set<string>): PathCandidateMeta {
+  return {
+    candidates: [...set].sort((a, b) => a.localeCompare(b)).slice(0, MAX_LIST),
+    directories,
+  };
+}
+
 export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
   const resolved = path.resolve(cwd);
-
-  const addFallbackDirs = (
-    rootDir: string,
-    set: Set<string>,
-    directories: Set<string>,
-  ): void => {
-    // Non-git fallback only: keep traversal bounded for responsiveness.
-    const dirs = globSync('**/*', {
-      cwd: rootDir,
-      dot: false,
-      onlyDirectories: true,
-      deep: 8,
-      expandDirectories: false,
-      ignore: ['**/node_modules/**', '**/.git/**'],
-    });
-    for (const d of dirs) {
-      const norm = toPosix(d).replace(/\/+$/, '');
-      if (isSearchableCandidate(norm)) {
-        set.add(norm);
-        directories.add(norm);
-      }
-    }
-  };
+  const set = new Set<string>();
+  const directories = new Set<string>();
 
   try {
     const root = getGitRepoRoot(resolved);
@@ -89,26 +104,8 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
       },
     );
     const s = buf.toString('utf8');
-    const files = s ? s.split('\0').filter(Boolean) : [];
-    const set = new Set<string>();
-    const directories = new Set<string>();
-    for (const f of files) {
-      const norm = toPosix(f);
-      if (isSearchableCandidate(norm)) {
-        set.add(norm);
-      }
-      let dir = path.posix.dirname(norm);
-      while (dir && dir !== '.' && dir !== '/') {
-        if (isSearchableCandidate(dir)) {
-          set.add(dir);
-          directories.add(dir);
-        }
-        const next = path.posix.dirname(dir);
-        if (next === dir) {
-          break;
-        }
-        dir = next;
-      }
+    for (const f of s ? s.split('\0').filter(Boolean) : []) {
+      addWithAncestors(toPosix(f), false, set, directories);
     }
 
     // Fast git-native untracked directory listing (avoids expensive full FS walk).
@@ -121,38 +118,15 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
       },
     );
     const otherRaw = otherBuf.toString('utf8');
-    const otherDirs = otherRaw ? otherRaw.split('\0').filter(Boolean) : [];
-    for (const d of otherDirs) {
-      const isDirEntry = d.endsWith('/');
+    for (const d of otherRaw ? otherRaw.split('\0').filter(Boolean) : []) {
       const norm = toPosix(d).replace(/\/+$/, '');
-      if (!isSearchableCandidate(norm)) {
-        continue;
-      }
-      set.add(norm);
-      if (isDirEntry) {
-        directories.add(norm);
-      }
-      let parent = path.posix.dirname(norm);
-      while (parent && parent !== '.' && parent !== '/') {
-        if (isSearchableCandidate(parent)) {
-          set.add(parent);
-          directories.add(parent);
-        }
-        const next = path.posix.dirname(parent);
-        if (next === parent) {
-          break;
-        }
-        parent = next;
-      }
+      addWithAncestors(norm, d.endsWith('/'), set, directories);
     }
-    return {
-      candidates: [...set]
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, MAX_LIST),
-      directories,
-    };
+    return toMeta(set, directories);
   } catch {
-    // Directories come back with a trailing `/`.
+    // Not a git work tree: one filesystem walk. Directories come back with a trailing `/`.
+    set.clear();
+    directories.clear();
     const entries = globSync('**/*', {
       cwd: resolved,
       dot: false,
@@ -160,27 +134,11 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
       expandDirectories: false,
       ignore: ['**/node_modules/**', '**/.git/**'],
     });
-    const out = new Set<string>();
-    const directories = new Set<string>();
     for (const e of entries) {
-      const rel = toPosix(path.relative(resolved, path.join(resolved, e)));
-      if (!isSearchableCandidate(rel)) {
-        continue;
-      }
-      const isDir = rel.endsWith('/');
-      const trimmed = isDir ? rel.slice(0, -1) : rel;
-      out.add(trimmed);
-      if (isDir) {
-        directories.add(trimmed);
-      }
+      const norm = toPosix(e).replace(/\/+$/, '');
+      addWithAncestors(norm, e.endsWith('/'), set, directories);
     }
-    addFallbackDirs(resolved, out, directories);
-    return {
-      candidates: [...out]
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, MAX_LIST),
-      directories,
-    };
+    return toMeta(set, directories);
   }
 }
 
