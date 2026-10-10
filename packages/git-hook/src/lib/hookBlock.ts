@@ -24,7 +24,7 @@ export function renderHookBlock(
   ].join('\n');
 }
 
-export type UpsertAction = 'created' | 'appended' | 'updated' | 'unchanged';
+export type UpsertAction = 'created' | 'inserted' | 'updated' | 'unchanged';
 
 export interface UpsertResult {
   content: string;
@@ -49,7 +49,9 @@ function findBlock(
  * Insert or replace the managed block in a hook script.
  * - `existing` undefined/blank → new script with `shebang` + block
  * - block present → replaced in place
- * - otherwise → block appended, existing content preserved
+ * - otherwise → block inserted right after the shebang (or at the top), so it always runs and
+ *   the existing script keeps its own control flow and final exit status (appending would be
+ *   skipped by an `exit`/`exec`, and would mask a failing last command without `set -e`)
  */
 export function upsertHookBlock(
   existing: string | undefined,
@@ -68,8 +70,18 @@ export function upsertHookBlock(
       action: content === existing ? 'unchanged' : 'updated',
     };
   }
-  const base = existing.endsWith('\n') ? existing : `${existing}\n`;
-  return { content: `${base}\n${block}\n`, action: 'appended' };
+  const firstLineEnd = existing.indexOf('\n');
+  if (existing.startsWith('#!')) {
+    const shebangLine =
+      firstLineEnd === -1 ? existing : existing.slice(0, firstLineEnd);
+    const rest = firstLineEnd === -1 ? '' : existing.slice(firstLineEnd + 1);
+    const tail = rest.trim() === '' ? '' : `\n${rest}`;
+    return {
+      content: `${shebangLine}\n\n${block}\n${tail}`,
+      action: 'inserted',
+    };
+  }
+  return { content: `${block}\n\n${existing}`, action: 'inserted' };
 }
 
 export interface RemoveResult {
@@ -79,7 +91,7 @@ export interface RemoveResult {
 }
 
 /** True when `content` has nothing but an optional shebang and whitespace. */
-export function isEmptyHookScript(content: string): boolean {
+function isEmptyHookScript(content: string): boolean {
   const lines = content
     .split('\n')
     .map((l) => l.trim())
@@ -89,7 +101,7 @@ export function isEmptyHookScript(content: string): boolean {
   );
 }
 
-/** Remove the managed block (and the blank line that `upsertHookBlock` put before it). */
+/** Remove the managed block and the blank lines `upsertHookBlock` put around it. */
 export function removeHookBlock(existing: string): RemoveResult {
   const found = findBlock(existing);
   if (!found) {
@@ -97,7 +109,7 @@ export function removeHookBlock(existing: string): RemoveResult {
   }
   let before = existing.slice(0, found.start);
   let after = existing.slice(found.end);
-  if (after.startsWith('\n')) {
+  for (let i = 0; i < 2 && after.startsWith('\n'); i++) {
     after = after.slice(1);
   }
   if (before.endsWith('\n\n')) {

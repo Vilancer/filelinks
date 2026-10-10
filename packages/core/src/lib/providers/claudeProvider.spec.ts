@@ -119,9 +119,13 @@ describe('claudeAgentProvider', () => {
       expect(o.env).toBeUndefined();
     });
 
-    it('suggest mode is read-only', () => {
+    it('suggest mode is read-only, settings hooks included', () => {
       const o = buildClaudeQueryOptions(deviceConfig, {}, 'suggest');
       expect(o.tools).toEqual(['Read', 'Glob', 'Grep']);
+      expect(o.settings).toEqual({ disableAllHooks: true });
+      expect(buildClaudeQueryOptions(deviceConfig, {}, 'edit').settings).toBe(
+        undefined,
+      );
       expect(o.tools).not.toContain('Edit');
       expect(o.tools).not.toContain('Bash');
     });

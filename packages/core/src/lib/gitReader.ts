@@ -39,7 +39,14 @@ export function getStagedDiffForPaths(
 export function snapshotDirtyPaths(cwd: string): Map<string, string> {
   const status = execFileSync(
     'git',
-    ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+    // Submodules show up as directories, which `git hash-object` can't hash.
+    [
+      'status',
+      '--porcelain=v1',
+      '-z',
+      '--untracked-files=all',
+      '--ignore-submodules=all',
+    ],
     { cwd, encoding: 'utf8' },
   );
   const paths: string[] = [];

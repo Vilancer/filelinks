@@ -10,6 +10,9 @@ import type {
 
 export const MERMAID_CDN_URL =
   'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js';
+/** Subresource Integrity hash of exactly that file, so a tampered CDN copy doesn't run. */
+export const MERMAID_CDN_INTEGRITY =
+  'sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I';
 
 const NO_LINKS = 'No links declared.';
 
@@ -320,7 +323,7 @@ ${rows}
     </table>
     </div>
   </section>
-  <script src="${MERMAID_CDN_URL}"></script>
+  <script src="${MERMAID_CDN_URL}" integrity="${MERMAID_CDN_INTEGRITY}" crossorigin="anonymous"></script>
   <script>
     (function () {
       if (typeof mermaid === 'undefined') return;

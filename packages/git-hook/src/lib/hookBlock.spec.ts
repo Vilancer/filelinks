@@ -43,11 +43,35 @@ describe('upsertHookBlock', () => {
     expect(r.content.startsWith('#!/usr/bin/env sh\n')).toBe(true);
   });
 
-  it('appends to an existing script and preserves its content', () => {
-    const existing = '#!/bin/sh\nnpx lint-staged';
+  it('inserts right after the shebang so the existing script keeps its exit status', () => {
+    const existing = '#!/bin/sh\nnpm test\n';
     const r = upsertHookBlock(existing, block);
-    expect(r.action).toBe('appended');
-    expect(r.content).toBe(`#!/bin/sh\nnpx lint-staged\n\n${block}\n`);
+    expect(r.action).toBe('inserted');
+    expect(r.content).toBe(`#!/bin/sh\n\n${block}\n\nnpm test\n`);
+  });
+
+  it('inserts before an `exit` or `exec` so the check is reachable', () => {
+    const existing = '#!/bin/sh\nexec npx lint-staged\n';
+    const r = upsertHookBlock(existing, block);
+    expect(r.content.indexOf(block)).toBeLessThan(
+      r.content.indexOf('exec npx lint-staged'),
+    );
+  });
+
+  it('inserts at the top of a script without a shebang (husky v9)', () => {
+    const r = upsertHookBlock('npx lint-staged\n', block);
+    expect(r.content).toBe(`${block}\n\nnpx lint-staged\n`);
+  });
+
+  it('round-trips through removeHookBlock to the original script', () => {
+    for (const original of [
+      '#!/bin/sh\nnpm test\n',
+      'npx lint-staged\n',
+      '#!/bin/sh\nset -e\nnpm test\nexit 0\n',
+    ]) {
+      const inserted = upsertHookBlock(original, block).content;
+      expect(removeHookBlock(inserted).content).toBe(original);
+    }
   });
 
   it('replaces an existing block in place', () => {
@@ -62,6 +86,7 @@ describe('upsertHookBlock', () => {
   it('is idempotent', () => {
     const first = upsertHookBlock('#!/bin/sh\nnpx lint-staged\n', block);
     const second = upsertHookBlock(first.content, block);
+    expect(first.action).toBe('inserted');
     expect(second.action).toBe('unchanged');
     expect(second.content).toBe(first.content);
   });

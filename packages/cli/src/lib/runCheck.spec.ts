@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -379,6 +387,15 @@ describe('runCheck agent orchestration', () => {
   });
 
   describe('agent fixes (--stage-fixes)', () => {
+    let actual: typeof import('@vilancer/filelinks-core');
+
+    // The real matchers, loaded once: a cold import of core is slow under parallel test load.
+    beforeAll(async () => {
+      actual = await vi.importActual<typeof import('@vilancer/filelinks-core')>(
+        '@vilancer/filelinks-core',
+      );
+    }, 30_000);
+
     const severe = { ...entry, severity: 'error' as const };
     const coverage = {
       entry: severe,
@@ -479,6 +496,61 @@ describe('runCheck agent orchestration', () => {
 
       expect(mockCore.stagePaths).not.toHaveBeenCalled();
       expect(code).toBe(1);
+    });
+
+    it('reports a staged fix as staged even when another agent run failed', async () => {
+      mockCore.getStagedFilePaths
+        .mockReturnValueOnce(['apps/foo.ts'])
+        .mockReturnValueOnce(['apps/foo.ts', 'docs/x.md']);
+      mockRun.mockRejectedValue(new Error('agent crashed after writing'));
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const code = await runCheck({
+        cwd: '/repo',
+        json: true,
+        runAgents: true,
+        stageFixes: true,
+      });
+
+      expect(code).toBe(1);
+      const payload = JSON.parse(String(log.mock.calls.at(-1)?.[0]));
+      expect(payload.agentFixes).toEqual([{ path: 'docs/x.md', staged: true }]);
+    });
+
+    it('never stages an already-staged companion the agent also touched', async () => {
+      const twoAffects = {
+        trigger: 'apps/**/*.ts',
+        affects: [
+          { file: 'docs/x.md', reason: 'missing one' },
+          { file: 'docs/y.md', reason: 'already staged' },
+        ],
+        severity: 'error' as const,
+      };
+      mockCore.loadFileLinksConfig.mockReturnValue({
+        links: [twoAffects],
+        config: { agent: { provider: 'cursor' } },
+      });
+      mockCore.matchStagedLinks.mockImplementation(actual.matchStagedLinks);
+      mockCore.classifyStagedLinks.mockImplementation(
+        actual.classifyStagedLinks,
+      );
+      mockCore.getStagedFilePaths
+        .mockReturnValueOnce(['apps/foo.ts', 'docs/y.md'])
+        .mockReturnValueOnce(['apps/foo.ts', 'docs/y.md', 'docs/x.md']);
+      mockCore.changedSinceSnapshot.mockReturnValue(['docs/x.md', 'docs/y.md']);
+      vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const code = await runCheck({
+        cwd: '/repo',
+        json: true,
+        runAgents: true,
+        stageFixes: true,
+      });
+
+      expect(mockCore.stagePaths).toHaveBeenCalledWith('/repo', ['docs/x.md']);
+      expect(code).toBe(0);
     });
   });
 });

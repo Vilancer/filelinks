@@ -41,16 +41,19 @@ function effectiveSeverity(entry: {
   return entry.severity ?? 'warn';
 }
 
-/** One row per missing companion of a staged trigger. */
+/**
+ * One row per missing companion of a staged trigger. `missing` holds each violated link
+ * narrowed to its missing companions (what agent fixes may stage).
+ */
 function computeViolations(
   staged: string[],
   links: FileLinkEntry[],
-): { violations: CheckViolationJson[]; violated: FileLinkEntry[] } {
+): { violations: CheckViolationJson[]; missing: FileLinkEntry[] } {
   const violations: CheckViolationJson[] = [];
-  const violated: FileLinkEntry[] = [];
+  const missing: FileLinkEntry[] = [];
   for (const { entry, missingAffected } of matchStagedLinks(staged, links)) {
     if (missingAffected.length > 0) {
-      violated.push(entry);
+      missing.push({ ...entry, affects: missingAffected });
     }
     for (const aff of missingAffected) {
       violations.push({
@@ -61,7 +64,7 @@ function computeViolations(
       });
     }
   }
-  return { violations, violated };
+  return { violations, missing };
 }
 
 function printViolations(violations: CheckViolationJson[]): void {
@@ -81,18 +84,21 @@ function trySnapshot(cwd: string): Map<string, string> | undefined {
   }
 }
 
-/** Companion paths of violated links that the agents wrote during this run. */
+/** Missing companions that the agents wrote during this run (never already-staged ones). */
 function detectAgentFixes(
   before: Map<string, string> | undefined,
   cwd: string,
-  violated: FileLinkEntry[],
+  missing: FileLinkEntry[],
 ): string[] {
-  const after = before === undefined ? undefined : trySnapshot(cwd);
-  if (before === undefined || after === undefined || violated.length === 0) {
+  if (before === undefined || missing.length === 0) {
+    return [];
+  }
+  const after = trySnapshot(cwd);
+  if (after === undefined) {
     return [];
   }
   const changed = changedSinceSnapshot(before, after);
-  const fixes = classifyStagedLinks(changed, violated).flatMap(
+  const fixes = classifyStagedLinks(changed, missing).flatMap(
     (row) => row.affectPaths,
   );
   return [...new Set(fixes)];
@@ -151,10 +157,13 @@ export async function runCheck(opts: RunCheckOpts): Promise<number> {
     agentRuns = result.runs;
     agentExit = result.exitCode;
 
-    const fixes = detectAgentFixes(before, opts.cwd, initial.violated);
+    const fixes = detectAgentFixes(before, opts.cwd, initial.missing);
+    // Independent of agent failures: one link's agent may fail while another's fix stages fine.
+    let fixesStaged = false;
     if (fixes.length > 0 && opts.stageFixes) {
       try {
         stagePaths(opts.cwd, fixes);
+        fixesStaged = true;
         violations = computeViolations(
           getStagedFilePaths(opts.cwd),
           links,
@@ -164,10 +173,7 @@ export async function runCheck(opts: RunCheckOpts): Promise<number> {
         agentExit = 1;
       }
     }
-    agentFixes = fixes.map((path) => ({
-      path,
-      staged: Boolean(opts.stageFixes) && agentExit === 0,
-    }));
+    agentFixes = fixes.map((path) => ({ path, staged: fixesStaged }));
 
     if (!opts.json) {
       for (const fix of agentFixes) {

@@ -27,6 +27,7 @@ export type {
 export {
   ANTHROPIC_API_KEY_ENV_NAME,
   CLAUDE_OAUTH_TOKEN_ENV_NAME,
+  claudeTokenFromEnv,
   createClaudeAgentProvider,
   type ClaudeAgentSdk,
 } from './claudeProvider';

@@ -79,16 +79,17 @@ describe('git hook install/uninstall (temp git repo)', () => {
     expect(readFileSync(path, 'utf8')).toBe(content);
   });
 
-  it('appends to an existing non-executable hook and makes it executable', () => {
+  it('inserts into an existing non-executable hook (before its commands) and makes it executable', () => {
     const path = join(repo, '.git', 'hooks', 'pre-commit');
     mkdirSync(join(repo, '.git', 'hooks'), { recursive: true });
     writeFileSync(path, '#!/bin/sh\necho mine\n', { mode: 0o644 });
 
     expect(installHook({ cwd: repo, command: 'custom-check' }).action).toBe(
-      'appended',
+      'inserted',
     );
     const content = readFileSync(path, 'utf8');
-    expect(content.startsWith('#!/bin/sh\necho mine\n')).toBe(true);
+    expect(content.startsWith('#!/bin/sh\n\n# >>> filelinks >>>')).toBe(true);
+    expect(content.endsWith('\n\necho mine\n')).toBe(true);
     expect(content).toContain('  custom-check || exit $?');
     expect(isExecutable(path)).toBe(true);
 
@@ -125,9 +126,9 @@ describe('git hook install/uninstall (temp git repo)', () => {
     writeFileSync(join(repo, '.husky', 'pre-commit'), 'npx lint-staged\n');
     const r = installHook({ cwd: repo });
     const path = join(repo, '.husky', 'pre-commit');
-    expect(r).toMatchObject({ kind: 'husky', path, action: 'appended' });
+    expect(r).toMatchObject({ kind: 'husky', path, action: 'inserted' });
     expect(readFileSync(path, 'utf8')).toBe(
-      `npx lint-staged\n\n${renderHookBlock()}\n`,
+      `${renderHookBlock()}\n\nnpx lint-staged\n`,
     );
     expect(isExecutable(path)).toBe(true);
     expect(existsSync(join(repo, '.git', 'hooks', 'pre-commit'))).toBe(false);

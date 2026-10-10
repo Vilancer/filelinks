@@ -79,4 +79,52 @@ describe('working-tree snapshots (real git repo)', () => {
   it('returns an empty snapshot for a clean tree', () => {
     expect(snapshotDirtyPaths(repo).size).toBe(0);
   });
+
+  it('ignores a dirty submodule instead of failing the whole snapshot', () => {
+    const sub = mkdtempSync(join(tmpdir(), 'filelinks-wt-sub-'));
+    try {
+      git(sub, 'init', '-q', '-b', 'main');
+      writeFileSync(join(sub, 'a.txt'), 'a\n');
+      git(sub, 'add', '-A');
+      git(
+        sub,
+        '-c',
+        'user.email=t@t',
+        '-c',
+        'user.name=t',
+        'commit',
+        '-qm',
+        'a',
+      );
+      git(
+        repo,
+        '-c',
+        'protocol.file.allow=always',
+        'submodule',
+        'add',
+        '-q',
+        sub,
+        'vendor/sub',
+      );
+      git(
+        repo,
+        '-c',
+        'user.email=t@t',
+        '-c',
+        'user.name=t',
+        'commit',
+        '-qm',
+        'sub',
+      );
+      writeFileSync(join(repo, 'vendor/sub/a.txt'), 'dirty\n');
+
+      const before = snapshotDirtyPaths(repo);
+      writeFileSync(join(repo, 'docs/api.md'), 'v2\n');
+      expect(changedSinceSnapshot(before, snapshotDirtyPaths(repo))).toEqual([
+        'docs/api.md',
+      ]);
+    } finally {
+      rmSync(sub, { recursive: true, force: true });
+    }
+  });
 });

@@ -6,7 +6,7 @@ import { runHookCheck } from './runHookCheck.js';
 
 const INSTALL_MESSAGES = {
   created: 'Created',
-  appended: 'Appended filelinks block to',
+  inserted: 'Inserted filelinks block (runs first) into',
   updated: 'Updated filelinks block in',
   unchanged: 'Already installed in',
 } as const;

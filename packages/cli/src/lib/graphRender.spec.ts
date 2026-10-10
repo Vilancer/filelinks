@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   escapeDot,
   escapeMermaid,
+  MERMAID_CDN_INTEGRITY,
   MERMAID_CDN_URL,
   renderGraphDot,
   renderGraphHtml,
@@ -176,7 +177,10 @@ describe('renderGraphHtml', () => {
     const out = renderGraphHtml(graph, { title: 'My <graph>' });
     expect(out.startsWith('<!doctype html>')).toBe(true);
     expect(out).toContain('<title>My &lt;graph&gt;</title>');
-    expect(out).toContain(`<script src="${MERMAID_CDN_URL}"></script>`);
+    expect(out).toContain(
+      `<script src="${MERMAID_CDN_URL}" integrity="${MERMAID_CDN_INTEGRITY}" crossorigin="anonymous"></script>`,
+    );
+    expect(MERMAID_CDN_INTEGRITY).toMatch(/^sha384-[A-Za-z0-9+/]{64}$/);
     expect(MERMAID_CDN_URL).toBe(
       'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js',
     );
