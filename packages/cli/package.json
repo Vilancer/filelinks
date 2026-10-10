@@ -1,7 +1,7 @@
 {
   "name": "@vilancer/filelinks",
   "version": "1.0.3",
-  "description": "CLI for filelinks: check staged git file-links and optionally run Cursor AI agents (--run-agents). filelinks add creates config if missing. Install with @vilancer/filelinks-core.",
+  "description": "CLI for filelinks: check staged git file-links and graph links, and run Cursor or Claude Code agents (--run-agents, suggest). filelinks add creates config if missing. Install with @vilancer/filelinks-core.",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -20,6 +20,8 @@
     "file-relationships",
     "ai",
     "cursor",
+    "claude",
+    "claude-code",
     "agents",
     "monorepo",
     "devtools"

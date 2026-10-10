@@ -11,11 +11,12 @@ export type ResolveCursorApiKeyOptions = {
 
 function unwrapEnvValue(rawValue: string): string {
   const value = rawValue.trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1).trim();
+  const quote = value[0];
+  if (quote === '"' || quote === "'") {
+    const end = value.indexOf(quote, 1);
+    if (end !== -1) {
+      return value.slice(1, end).trim();
+    }
   }
   const hashIndex = value.indexOf('#');
   if (hashIndex === -1) {
@@ -24,7 +25,11 @@ function unwrapEnvValue(rawValue: string): string {
   return value.slice(0, hashIndex).trim();
 }
 
-function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
+/** First non-empty `NAME=value` for `envName` in a dotenv-style file. */
+export function readEnvValueFromFile(
+  filePath: string,
+  envName: string,
+): string | undefined {
   if (!existsSync(filePath)) {
     return undefined;
   }
@@ -37,7 +42,9 @@ function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
     if (trimmed.length === 0 || trimmed.startsWith('#')) {
       continue;
     }
-    const match = trimmed.match(/^(?:export\s+)?CURSOR_API_KEY\s*=\s*(.*)$/u);
+    const match = trimmed.match(
+      new RegExp(`^(?:export\\s+)?${envName}\\s*=\\s*(.*)$`, 'u'),
+    );
     if (!match) {
       continue;
     }
@@ -65,12 +72,13 @@ export function resolveCursorApiKey(
     return envApiKey;
   }
 
-  const envLocalApiKey = readCursorApiKeyFromEnvFile(
+  const envLocalApiKey = readEnvValueFromFile(
     join(opts.cwd, '.env.local'),
+    CURSOR_API_KEY_ENV_NAME,
   );
   if (envLocalApiKey) {
     return envLocalApiKey;
   }
 
-  return readCursorApiKeyFromEnvFile(join(opts.cwd, '.env'));
+  return readEnvValueFromFile(join(opts.cwd, '.env'), CURSOR_API_KEY_ENV_NAME);
 }

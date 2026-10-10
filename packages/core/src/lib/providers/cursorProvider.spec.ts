@@ -147,6 +147,17 @@ describe('cursorAgentProvider', () => {
       );
     });
 
+    it('sends in agent mode by default and plan mode for suggest', async () => {
+      await cursorAgentProvider.run({ prompt: 'p', config: localConfig });
+      expect(mockSend).toHaveBeenLastCalledWith('p', { mode: 'agent' });
+      await cursorAgentProvider.run({
+        prompt: 'p',
+        config: localConfig,
+        mode: 'suggest',
+      });
+      expect(mockSend).toHaveBeenLastCalledWith('p', { mode: 'plan' });
+    });
+
     it('passes local cwd and settingSources for local runtime', async () => {
       await cursorAgentProvider.run({
         prompt: 'check sync',

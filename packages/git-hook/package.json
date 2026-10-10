@@ -1,11 +1,43 @@
 {
   "name": "@vilancer/filelinks-git-hook",
-  "version": "0.0.1",
-  "private": true,
-  "type": "commonjs",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "version": "1.0.3",
+  "description": "Install a filelinks check into git pre-commit hooks (plain .git/hooks or husky). Provides the filelinks-git-hook binary.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "bin": {
+    "filelinks-git-hook": "./dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "filelinks",
+    "git",
+    "git-hook",
+    "pre-commit",
+    "husky",
+    "lint-staged",
+    "staged",
+    "devtools"
+  ],
+  "homepage": "https://github.com/Vilancer/filelinks#readme",
+  "bugs": {
+    "url": "https://github.com/Vilancer/filelinks/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vilancer/filelinks.git",
+    "directory": "packages/git-hook"
+  },
+  "license": "ISC",
   "dependencies": {
+    "@vilancer/filelinks": "workspace:*",
+    "commander": "^13.1.0",
     "tslib": "^2.3.0"
   }
 }

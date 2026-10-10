@@ -3,11 +3,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { normalizeError } from '@vilancer/filelinks-core';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 
 import { runAdd } from './runAdd.js';
 import { runCheck } from './runCheck.js';
+import { GRAPH_FORMATS, runGraph } from './runGraph.js';
 import { runList } from './runList.js';
+import { runSuggest } from './runSuggest.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -85,12 +87,17 @@ export async function runCli(argv: string[]): Promise<void> {
       '--cursor-api-key <key>',
       'Cursor API key override for --run-agents',
     )
+    .option(
+      '--claude-token <token>',
+      'Claude setup token / Anthropic API key override for --run-agents (agent.claude.auth "token")',
+    )
     .action(async function (this: Command) {
       try {
         const g = globalOpts(this);
         const opts = this.opts() as {
           runAgents?: boolean;
           cursorApiKey?: string;
+          claudeToken?: string;
         };
         process.exitCode = await runCheck({
           cwd: g.cwd,
@@ -98,6 +105,38 @@ export async function runCli(argv: string[]): Promise<void> {
           json: g.json,
           runAgents: Boolean(opts.runAgents),
           cursorApiKey: opts.cursorApiKey,
+          claudeToken: opts.claudeToken,
+        });
+      } catch (e: unknown) {
+        const h = normalizeError(e);
+        console.error(h.message);
+        process.exitCode = 1;
+      }
+    });
+
+  program
+    .command('suggest')
+    .description(
+      'Ask the configured agent for read-only update suggestions on staged links (never edits files)',
+    )
+    .option('--cursor-api-key <key>', 'Cursor API key override')
+    .option(
+      '--claude-token <token>',
+      'Claude setup token / Anthropic API key override (agent.claude.auth "token")',
+    )
+    .action(async function (this: Command) {
+      try {
+        const g = globalOpts(this);
+        const opts = this.opts() as {
+          cursorApiKey?: string;
+          claudeToken?: string;
+        };
+        process.exitCode = await runSuggest({
+          cwd: g.cwd,
+          configPath: g.configPath,
+          json: g.json,
+          cursorApiKey: opts.cursorApiKey,
+          claudeToken: opts.claudeToken,
         });
       } catch (e: unknown) {
         const h = normalizeError(e);
@@ -116,6 +155,42 @@ export async function runCli(argv: string[]): Promise<void> {
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
+        });
+      } catch (e: unknown) {
+        const h = normalizeError(e);
+        console.error(h.message);
+        process.exitCode = 1;
+      }
+    });
+
+  program
+    .command('graph')
+    .description('Visualize declared links (terminal, DOT, Mermaid, HTML)')
+    .addOption(
+      new Option('--format <format>', 'output format')
+        .choices([...GRAPH_FORMATS])
+        .default('terminal'),
+    )
+    .option('--output <file>', 'write output to a file (relative to --cwd)')
+    .option(
+      '--staged',
+      'overlay staged status (triggered / satisfied / missing)',
+    )
+    .action(function (this: Command) {
+      try {
+        const g = globalOpts(this);
+        const o = this.opts() as {
+          format: (typeof GRAPH_FORMATS)[number];
+          output?: string;
+          staged?: boolean;
+        };
+        process.exitCode = runGraph({
+          cwd: g.cwd,
+          configPath: g.configPath,
+          json: g.json,
+          format: o.format,
+          output: o.output,
+          staged: o.staged === true,
         });
       } catch (e: unknown) {
         const h = normalizeError(e);

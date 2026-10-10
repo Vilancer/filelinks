@@ -24,7 +24,8 @@ pnpm add -D @vilancer/filelinks @vilancer/filelinks-core
 - **`defineLinks`** — typed config export (links + global options)
 - **Config loading** — `loadFileLinksConfig` (jiti loads `.ts` configs)
 - **Staged matching** — `matchStagedLinks` / `classifyStagedLinks` (minimatch + `linkType`)
-- **AI / Cursor agents** — prompt assembly, provider registry, run policies, Cursor SDK integration used by `filelinks check --run-agents`
+- **AI agents** — prompt assembly, provider registry, run policies, and two providers: **Cursor** (`@cursor/sdk`) and **Claude Code** (`@anthropic-ai/claude-agent-sdk`, `provider: 'claude'` with `claude.auth: 'device' | 'token'`), used by `filelinks check --run-agents` and `filelinks suggest`
+- **Link graph** — `buildLinkGraph` (nodes/edges with optional staged overlay) used by `filelinks graph`
 
 ## Config example (with AI agent)
 
@@ -65,7 +66,9 @@ Then run the CLI from [`@vilancer/filelinks`](https://www.npmjs.com/package/@vil
 ```bash
 filelinks add                 # creates filelinks.config.ts if missing
 filelinks check
-filelinks check --run-agents  # Cursor AI updates for policy-eligible links
+filelinks check --run-agents  # agent updates for policy-eligible links
+filelinks suggest             # read-only agent suggestions
+filelinks graph               # visualize links
 ```
 
 ## Related package

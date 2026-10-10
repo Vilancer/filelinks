@@ -18,7 +18,7 @@ export const AgentRunPolicySchema = Schema.Literal(
   'trigger-or-affects',
 );
 
-export const AgentProviderIdSchema = Schema.Literal('cursor');
+export const AgentProviderIdSchema = Schema.Literal('cursor', 'claude');
 
 export const AgentRuntimeSchema = Schema.Literal('local', 'cloud');
 
@@ -28,6 +28,16 @@ export const AgentLocalSettingsSchema = Schema.Struct({
 
 export const AgentCloudSettingsSchema = Schema.Struct({
   repos: Schema.Array(Schema.String),
+});
+
+/**
+ * Claude Code auth source: `device` lets Claude Code resolve its own login/config on this
+ * machine; `token` requires a setup token (`claude setup-token`) or API key resolved by filelinks.
+ */
+export const AgentClaudeAuthSchema = Schema.Literal('device', 'token');
+
+export const AgentClaudeSettingsSchema = Schema.Struct({
+  auth: Schema.optional(AgentClaudeAuthSchema),
 });
 
 export const AgentModelParameterSchema = Schema.Struct({
@@ -43,6 +53,7 @@ export const AgentSettingsSchema = Schema.Struct({
   modelParams: Schema.optional(Schema.Array(AgentModelParameterSchema)),
   local: Schema.optional(AgentLocalSettingsSchema),
   cloud: Schema.optional(AgentCloudSettingsSchema),
+  claude: Schema.optional(AgentClaudeSettingsSchema),
 });
 
 export const AffectedFileSchema = Schema.Struct({
@@ -80,6 +91,10 @@ export type AgentLocalSettings = Schema.Schema.Type<
 >;
 export type AgentCloudSettings = Schema.Schema.Type<
   typeof AgentCloudSettingsSchema
+>;
+export type AgentClaudeAuth = Schema.Schema.Type<typeof AgentClaudeAuthSchema>;
+export type AgentClaudeSettings = Schema.Schema.Type<
+  typeof AgentClaudeSettingsSchema
 >;
 export type AgentModelParameter = Schema.Schema.Type<
   typeof AgentModelParameterSchema

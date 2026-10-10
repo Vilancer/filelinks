@@ -1,5 +1,10 @@
+import {
+  AGENT_PROVIDER_RUNTIMES,
+  DEFAULT_AGENT_MODELS,
+} from './agentProviderInfo';
 import { AgentConfigError } from './errors';
 import type {
+  AgentClaudeSettings,
   AgentCloudSettings,
   AgentLocalSettings,
   AgentModelParameter,
@@ -19,6 +24,7 @@ export type ResolvedAgentConfig = {
   runPolicy?: AgentRunPolicy;
   local?: AgentLocalSettings;
   cloud?: AgentCloudSettings;
+  claude?: AgentClaudeSettings;
 };
 
 export function resolveAgentConfig(
@@ -41,6 +47,11 @@ export function validateResolvedAgentConfig(
   if (!merged.runtime) {
     throw new AgentConfigError('agent.runtime is required');
   }
+  if (!AGENT_PROVIDER_RUNTIMES[merged.provider].includes(merged.runtime)) {
+    throw new AgentConfigError(
+      `agent.runtime '${merged.runtime}' is not supported by provider '${merged.provider}' (supported: ${AGENT_PROVIDER_RUNTIMES[merged.provider].join(', ')})`,
+    );
+  }
   if (merged.runtime === 'local') {
     const cwd = merged.local?.cwd?.trim();
     if (!cwd) {
@@ -58,13 +69,7 @@ export function validateResolvedAgentConfig(
     }
   }
 
-  let model = merged.model;
-  if (!model && merged.provider === 'cursor') {
-    model = 'composer-2.5';
-  }
-  if (!model) {
-    throw new AgentConfigError('agent.model is required');
-  }
+  const model = merged.model ?? DEFAULT_AGENT_MODELS[merged.provider];
 
   return {
     provider: merged.provider,
@@ -79,5 +84,7 @@ export function validateResolvedAgentConfig(
       merged.local !== undefined && { local: merged.local }),
     ...(merged.runtime === 'cloud' &&
       merged.cloud !== undefined && { cloud: merged.cloud }),
+    ...(merged.provider === 'claude' &&
+      merged.claude !== undefined && { claude: merged.claude }),
   };
 }

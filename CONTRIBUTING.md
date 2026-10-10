@@ -167,6 +167,33 @@ CI and pre-commit **do not** call the live Cursor API. Agent behavior is covered
 
 Run **`pnpm test`** and **`pnpm run cli:test:e2e`** from the repo root after CLI/core changes.
 
+## Claude Code provider, suggest, graph, git hook (v1.2)
+
+### Claude Code provider
+
+- Source: **`packages/core/src/lib/providers/claudeProvider.ts`**. `@anthropic-ai/claude-agent-sdk` is ESM-only while core compiles to CommonJS, so the SDK is resolved with `require.resolve` and loaded through a real dynamic `import()` (`loadClaudeAgentSdk`). Tests inject a fake SDK via `createClaudeAgentProvider({ loadSdk })` — never `vi.mock` the SDK.
+- Auth: `agent.claude.auth: 'device'` inherits the environment and loads Claude Code user/project/local settings; `'token'` injects exactly one of `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` (CLI order: `--claude-token` → env → `.env.local` → `.env`).
+- Tool lock-down: `tools` + `allowedTools` are `Read, Glob, Grep, Edit, Write` (edit) or `Read, Glob, Grep` (suggest), `permissionMode: 'dontAsk'`, `strictMcpConfig: true`.
+
+**Manual smoke (real Claude Code):** log in once with `claude` → `/login` (or `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` with `claude.auth: 'token'`), set `agent.provider: 'claude'`, `runtime: 'local'`, `local.cwd: '.'`, stage a trigger, then:
+
+```bash
+filelinks suggest            # read-only; prints suggestions
+filelinks check --run-agents # may edit affected files
+```
+
+### `suggest` and the shared agent loop
+
+`check --run-agents` and `suggest` share **`packages/cli/src/lib/agentRunner.ts`** (`runEligibleAgents`). `suggest` passes `mode: 'suggest'` to `buildAgentPrompt` (appends read-only task instructions) and to `provider.run` (Cursor `plan` mode / Claude read-only tools).
+
+### `graph`
+
+Graph model: **`packages/core/src/lib/linkGraph.ts`** (`buildLinkGraph`, Effect Schema shapes, staged overlay reuses `classifyStagedLinks`). Renderers: **`packages/cli/src/lib/graphRender.ts`**. Command: **`packages/cli/src/lib/runGraph.ts`**.
+
+### Git hook package
+
+**`packages/git-hook`** is ESM and ships the `filelinks-git-hook` bin (`install`, `uninstall`, `run`). Its specs create real temp git repos. See **`packages/git-hook/README.md`** for husky / lint-staged usage.
+
 ## Releasing a milestone (main + tag + GitHub release)
 
 Use this flow after milestone work is merged to `main`.

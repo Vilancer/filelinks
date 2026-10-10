@@ -11,6 +11,8 @@ export type AgentRunSummaryJson = {
   trigger: string;
   status: 'ok' | 'error';
   runId?: string;
+  /** Agent reply for `suggest` runs. */
+  suggestion?: string;
 };
 
 export type ListRowJson = {
@@ -37,4 +39,8 @@ export function printCheckJson(
 
 export function printListJson(rows: ListRowJson[]): void {
   console.log(JSON.stringify({ rows }, null, 2));
+}
+
+export function printSuggestJson(suggestions: AgentRunSummaryJson[]): void {
+  console.log(JSON.stringify({ suggestions }, null, 2));
 }

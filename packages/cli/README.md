@@ -8,8 +8,10 @@ This package is the **CLI** (`filelinks` binary). Pair it with [`@vilancer/filel
 
 1. **Declare links** in TypeScript config (`trigger` → `affects`)
 2. **`filelinks check`** — report missing companions for staged files (warn/error exit codes)
-3. **`filelinks check --run-agents`** — optionally run **Cursor AI agents** to update linked files when a link’s agent policy matches
-4. **`filelinks list` / `filelinks add`** — inspect links, or use the interactive wizard to **create `filelinks.config.ts` if it does not exist** (or append a link if it does), including agent/model setup
+3. **`filelinks check --run-agents`** — optionally run an AI agent (**Cursor** or **Claude Code**) to update linked files when a link’s agent policy matches
+4. **`filelinks suggest`** — the same agent pass, read-only: prints suggested companion updates, never edits files
+5. **`filelinks graph`** — visualize links as a terminal tree, Graphviz DOT, Mermaid, or HTML (`--staged` overlays the current commit)
+6. **`filelinks list` / `filelinks add`** — inspect links, or use the interactive wizard to **create `filelinks.config.ts` if it does not exist** (or append a link if it does), including agent/model setup
 
 ## AI agents (Cursor)
 
@@ -56,6 +58,33 @@ export default defineLinks(
 - **Policies:** `trigger-only` (default) or `trigger-or-affects`
 - **Runtimes:** `local` (+ `cwd`) or `cloud` (+ `repos`)
 - **Wizard:** `filelinks add` can set agent defaults, models, and prompts interactively
+
+## AI agents (Claude Code)
+
+`provider: 'claude'` runs Claude Code through the Claude Agent SDK (runtime `local` only):
+
+```typescript
+agent: {
+  provider: 'claude',
+  runtime: 'local',
+  local: { cwd: '.' },
+  model: 'claude-opus-5-5', // default
+  claude: { auth: 'device' }, // reuse the Claude Code login on this machine
+  // claude: { auth: 'token' } — use `claude setup-token` output (CLAUDE_CODE_OAUTH_TOKEN) or ANTHROPIC_API_KEY
+},
+```
+
+- **Token auth:** `--claude-token` → `CLAUDE_CODE_OAUTH_TOKEN` → `ANTHROPIC_API_KEY` (env, then `.env.local` / `.env` under `--cwd`)
+- **Effort:** `modelParams: [{ id: 'effort', value: 'high' }]`
+- **Tools:** edits get Read/Glob/Grep/Edit/Write; `suggest` gets Read/Glob/Grep. No Bash, web, or MCP.
+
+```bash
+filelinks suggest
+filelinks check --run-agents
+filelinks graph --format html --output links.html
+```
+
+For a pre-commit hook, see [`@vilancer/filelinks-git-hook`](https://www.npmjs.com/package/@vilancer/filelinks-git-hook).
 
 ## Install
 

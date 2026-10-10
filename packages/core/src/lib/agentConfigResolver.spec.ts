@@ -117,4 +117,40 @@ describe('validateResolvedAgentConfig', () => {
       }),
     ).toThrow(/agent\.cloud\.repos/);
   });
+
+  it('defaults model to claude-opus-5-5 for claude and keeps claude settings', () => {
+    const config: FileLinkConfig = {
+      agent: {
+        provider: 'claude',
+        runtime: 'local',
+        local: { cwd: '.' },
+        claude: { auth: 'token' },
+      },
+    };
+    expect(resolveAgentConfig(config, baseEntry)).toEqual({
+      provider: 'claude',
+      runtime: 'local',
+      model: 'claude-opus-5-5',
+      local: { cwd: '.' },
+      claude: { auth: 'token' },
+    });
+  });
+
+  it('rejects cloud runtime for claude', () => {
+    expect(() =>
+      validateResolvedAgentConfig({
+        provider: 'claude',
+        runtime: 'cloud',
+        cloud: { repos: ['org/repo'] },
+      }),
+    ).toThrow(/not supported by provider 'claude'/);
+  });
+
+  it('drops claude settings for the cursor provider', () => {
+    const resolved = validateResolvedAgentConfig({
+      ...validLocal,
+      claude: { auth: 'device' },
+    });
+    expect(resolved.claude).toBeUndefined();
+  });
 });

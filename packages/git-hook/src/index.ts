@@ -1,1 +1,32 @@
-export * from './lib/git-hook';
+#!/usr/bin/env node
+import { realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export * from './lib/hookBlock.js';
+export * from './lib/hookTarget.js';
+export * from './lib/runHookCheck.js';
+export { runGitHookCli } from './lib/cli.js';
+
+import { runGitHookCli } from './lib/cli.js';
+
+/** True when this file is the process entry (not when imported). Uses realpath so pnpm/npm bin symlinks match. */
+function isMainModule(): boolean {
+  const invoked = process.argv[1];
+  if (!invoked) {
+    return false;
+  }
+  const entryPath = fileURLToPath(import.meta.url);
+  try {
+    return realpathSync(resolve(invoked)) === realpathSync(resolve(entryPath));
+  } catch {
+    return resolve(invoked) === resolve(entryPath);
+  }
+}
+
+if (isMainModule()) {
+  runGitHookCli(process.argv).catch((e: unknown) => {
+    console.error(e);
+    process.exitCode = 1;
+  });
+}

@@ -108,7 +108,10 @@ export const cursorAgentProvider: AgentProvider = {
 
     try {
       agent = await Agent.create(createOptions);
-      const run = await agent.send(prompt);
+      // Cursor `plan` mode does not execute edits, so suggest runs stay read-only.
+      const run = await agent.send(prompt, {
+        mode: input.mode === 'suggest' ? 'plan' : 'agent',
+      });
       const result = await run.wait();
 
       if (result.status === 'error') {

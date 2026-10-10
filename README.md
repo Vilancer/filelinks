@@ -1,12 +1,20 @@
 # filelinks
 
 [![Cursor provider](https://img.shields.io/badge/Provider-Cursor-6D6DF6)](https://cursor.com)
+[![Claude Code provider](https://img.shields.io/badge/Provider-Claude%20Code-D97757)](https://code.claude.com/docs/en/agent-sdk)
 [![npm CLI](https://img.shields.io/npm/v/@vilancer/filelinks?label=%40vilancer%2Ffilelinks)](https://www.npmjs.com/package/@vilancer/filelinks)
 [![npm core](https://img.shields.io/npm/v/@vilancer/filelinks-core?label=%40vilancer%2Ffilelinks-core)](https://www.npmjs.com/package/@vilancer/filelinks-core)
 
-Declare semantic relationships between files — then **check staged git changes**, and optionally run **Cursor AI agents** to update the linked companions (`filelinks check --run-agents`).
+Declare semantic relationships between files — then **check staged git changes**, visualize them with **`filelinks graph`**, ask an AI agent (**Cursor** or **Claude Code**) for read-only **suggestions**, or let it update the linked companions (`filelinks check --run-agents`).
 
-**Packages:** [`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks) (CLI) · [`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core) (`defineLinks` + agent helpers)
+**Packages:** [`@vilancer/filelinks`](https://www.npmjs.com/package/@vilancer/filelinks) (CLI) · [`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core) (`defineLinks` + agent helpers) · [`@vilancer/filelinks-git-hook`](packages/git-hook/README.md) (pre-commit hook installer)
+
+## v1.2 highlights
+
+- **Claude Code provider** (`provider: 'claude'`) via the Claude Agent SDK — reuse the Claude Code login on your machine (`auth: 'device'`) or a `claude setup-token` token (`auth: 'token'`)
+- **`filelinks suggest`** — read-only agent pass that prints suggested companion updates and never edits files
+- **`filelinks graph`** — terminal tree, Graphviz DOT, Mermaid, or a self-contained HTML page; `--staged` overlays what the current commit triggers
+- **`@vilancer/filelinks-git-hook`** — `filelinks-git-hook install` for plain git hooks or husky, plus lint-staged docs
 
 ## v1.1 release highlights
 
@@ -137,6 +145,77 @@ export default defineLinks(
 
 For contributor smoke tests, CI notes, and the linked-consumer workflow, see **`CONTRIBUTING.md`** → **AI agents (v1.1)**.
 
+#### AI agents with Claude Code (`provider: 'claude'`)
+
+The **`claude`** provider runs Claude Code through **`@anthropic-ai/claude-agent-sdk`** against `agent.local.cwd` (runtime **`local`** only). Pick how it authenticates with **`agent.claude.auth`**:
+
+| `auth`             | Credentials                                                                                                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `device` (default) | Whatever Claude Code already uses on this machine — run `claude` and `/login` once. Your user/project Claude Code settings and `CLAUDE.md` are loaded.                                                                                                                                                        |
+| `token`            | A long-lived token from **`claude setup-token`** (or an Anthropic API key). Resolution order: `--claude-token`, then `CLAUDE_CODE_OAUTH_TOKEN`, then `ANTHROPIC_API_KEY` (process env, then `.env.local`, then `.env` under `--cwd`). Missing → actionable error. User settings are not loaded (good for CI). |
+
+```typescript
+export default defineLinks(links, {
+  agent: {
+    provider: 'claude',
+    runtime: 'local',
+    local: { cwd: '.' },
+    model: 'claude-opus-5-5', // default; any Claude Code model id or alias works
+    modelParams: [{ id: 'effort', value: 'high' }], // optional: low | medium | high | xhigh | max
+    claude: { auth: 'device' }, // or 'token'
+  },
+});
+```
+
+```bash
+claude setup-token                       # once, for auth: 'token'
+export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+filelinks check --run-agents
+filelinks check --run-agents --claude-token "$CLAUDE_CODE_OAUTH_TOKEN"
+```
+
+Tools are locked down: `check --run-agents` gets **Read, Glob, Grep, Edit, Write** only (no Bash, no web, no MCP servers), and `suggest` gets **Read, Glob, Grep** only. Nothing prompts for permission; anything else is denied.
+
+### `filelinks suggest`
+
+Read-only agent pass over the same policy-eligible links as `check --run-agents`. The agent receives the staged trigger diff plus the affected files and replies with what each companion needs (or "no change"). **Files are never edited** — Cursor runs in `plan` mode, Claude Code gets read-only tools.
+
+```bash
+filelinks suggest
+filelinks suggest --json            # { "suggestions": [{ trigger, status, runId, suggestion }] }
+filelinks suggest --claude-token "$CLAUDE_CODE_OAUTH_TOKEN"
+filelinks suggest --cursor-api-key "$CURSOR_API_KEY"
+```
+
+Exit code is **1** if any agent run fails, otherwise **0**.
+
+### `filelinks graph`
+
+Visualize declared links.
+
+```bash
+filelinks graph                              # terminal tree (colored on a TTY; NO_COLOR respected)
+filelinks graph --staged                     # mark triggered links, satisfied ✓ / missing ✗ companions
+filelinks graph --format dot | dot -Tsvg > links.svg
+filelinks graph --format mermaid             # paste into Markdown
+filelinks graph --format html --output filelinks-graph.html
+filelinks graph --json                       # { "graph": { nodes, edges, ... } }
+```
+
+The HTML page renders the diagram with Mermaid from jsDelivr and also includes a plain table of every link, so it is still useful offline.
+
+### Git hook
+
+Run `filelinks check` on every commit with **[`@vilancer/filelinks-git-hook`](packages/git-hook/README.md)**:
+
+```bash
+pnpm add -D @vilancer/filelinks-git-hook
+npx filelinks-git-hook install          # .git/hooks/pre-commit, or .husky/pre-commit when .husky/ exists
+FILELINKS_SKIP=1 git commit -m "..."    # skip once
+```
+
+See the package README for husky and lint-staged setups.
+
 ### `filelinks list`
 
 Print all declared links (table, or **`--json`**).
@@ -148,7 +227,7 @@ filelinks list --json
 
 ### `filelinks add`
 
-Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with runtime selection (**local** `cwd` or **cloud** `repos`). The wizard also supports model selection (live provider `listModels` when available, with fallback options), meaningful variant labels (for example `default`, `Standard`, `Fast`), and debounced input search for large model catalogs. You can also set optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`).
+Interactive terminal UI (**Ink** + **React**): enter a **trigger** glob, **filter and pick** affected file paths from the repo (no need to type full paths), choose **severity** and optional **linkType**, then optionally configure **agent defaults** (`config.agent`) and a **per-link override** (`entry.agent`) with a **provider** picker (**cursor** or **claude**; for claude, **device** vs **token** auth) and runtime selection (**local** `cwd` or **cloud** `repos`; cloud is Cursor-only). The wizard also supports model selection (live provider `listModels` when available, with fallback options), meaningful variant labels (for example `default`, `Standard`, `Fast`), and debounced input search for large model catalogs. You can also set optional global/per-link prompt config (`systemPrompt`, `temperature`, `maxTokens`).
 
 **Bootstraps the config:** if `filelinks.config.ts` is missing, **`add` creates it** with the first link (there is no separate `init` command). If the file already exists, it appends the new link (full-file rewrite). Does **not** support **`--json`** (use `check` / `list` for machine-readable output).
 

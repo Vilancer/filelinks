@@ -1,20 +1,11 @@
 import {
-  buildAgentPrompt,
-  classifyStagedLinks,
-  getAgentProvider,
-  getStagedDiffForPaths,
   getStagedFilePaths,
   loadFileLinksConfig,
   matchStagedLinks,
   normalizeError,
-  readAffectedContents,
-  resolveAgentConfig,
-  resolveAgentRunPolicy,
-  resolvePrompt,
-  shouldRunAgentForLink,
 } from '@vilancer/filelinks-core';
-import { resolveCursorApiKey } from './cursorApiKey.js';
 
+import { runEligibleAgents } from './agentRunner.js';
 import type { AgentRunSummaryJson, CheckViolationJson } from './formatters.js';
 import { printCheckJson } from './formatters.js';
 
@@ -26,10 +17,9 @@ export type RunCheckOpts = {
   runAgents?: boolean;
   /** Optional Cursor API key override for agent runs. */
   cursorApiKey?: string;
+  /** Optional Claude setup token / Anthropic API key override (auth "token"). */
+  claudeToken?: string;
 };
-
-const CURSOR_API_KEY_MISSING_MESSAGE =
-  'Cursor API key is required to run agents. Provide it via --cursor-api-key, CURSOR_API_KEY, or CURSOR_API_KEY in .env/.env.local at the --cwd repo root.';
 
 function effectiveSeverity(entry: {
   severity?: 'warn' | 'error';
@@ -87,62 +77,24 @@ export async function runCheck(opts: RunCheckOpts): Promise<number> {
     }
   }
 
-  const agentRuns: AgentRunSummaryJson[] = [];
+  let agentRuns: AgentRunSummaryJson[] = [];
   let agentExit = 0;
 
   if (opts.runAgents) {
-    const coverageRows = classifyStagedLinks(staged, links);
-    const eligible = coverageRows.filter((cov) => {
-      const policy = resolveAgentRunPolicy(config, cov.entry);
-      return shouldRunAgentForLink(cov, policy);
-    });
-    const cursorApiKey = resolveCursorApiKey({
+    const result = await runEligibleAgents({
       cwd: opts.cwd,
-      cursorApiKey: opts.cursorApiKey,
+      links,
+      config,
+      staged,
+      mode: 'edit',
+      json: opts.json,
+      credentials: {
+        cursorApiKey: opts.cursorApiKey,
+        claudeToken: opts.claudeToken,
+      },
     });
-
-    for (const cov of eligible) {
-      if (!opts.json) {
-        console.error(`[agent] trigger=${cov.entry.trigger}`);
-      }
-      try {
-        const agentConfig = resolveAgentConfig(config, cov.entry);
-        if (agentConfig.provider === 'cursor' && !cursorApiKey) {
-          console.error(CURSOR_API_KEY_MISSING_MESSAGE);
-          agentRuns.push({
-            trigger: cov.entry.trigger,
-            status: 'error',
-          });
-          agentExit = 1;
-          continue;
-        }
-        const provider = getAgentProvider(agentConfig.provider);
-        const prompt = buildAgentPrompt({
-          prompt: resolvePrompt(config, cov.entry),
-          coverage: cov,
-          triggerDiff: getStagedDiffForPaths(opts.cwd, cov.triggerPaths),
-          affectedFiles: readAffectedContents(opts.cwd, [...cov.entry.affects]),
-        });
-        const result = await provider.run({
-          prompt,
-          config: agentConfig,
-          ctx: { apiKey: cursorApiKey },
-        });
-        agentRuns.push({
-          trigger: cov.entry.trigger,
-          status: 'ok',
-          runId: result.runId,
-        });
-      } catch (e: unknown) {
-        const h = normalizeError(e);
-        console.error(h.message);
-        agentRuns.push({
-          trigger: cov.entry.trigger,
-          status: 'error',
-        });
-        agentExit = 1;
-      }
-    }
+    agentRuns = result.runs;
+    agentExit = result.exitCode;
   }
 
   if (opts.json) {
