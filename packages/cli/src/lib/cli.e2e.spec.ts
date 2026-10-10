@@ -459,4 +459,14 @@ describe('[e2e] suggest, graph and claude wiring', () => {
     expect(process.exitCode).toBe(1);
     err.mockRestore();
   });
+
+  it('check --stage-fixes without --run-agents is rejected', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await runCli(['node', 'filelinks', 'check', '--stage-fixes']);
+
+    expect(process.exitCode).toBe(1);
+    expect(err).toHaveBeenCalledWith('--stage-fixes requires --run-agents');
+    expect(mockRun).not.toHaveBeenCalled();
+  });
 });

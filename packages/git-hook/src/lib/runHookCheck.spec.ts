@@ -35,6 +35,21 @@ describe('buildCheckArgv', () => {
       '--run-agents',
     ]);
   });
+
+  it('passes --stage-fixes only together with --run-agents', () => {
+    expect(buildCheckArgv({ runAgents: true, stageFixes: true })).toEqual([
+      'node',
+      'filelinks',
+      'check',
+      '--run-agents',
+      '--stage-fixes',
+    ]);
+    expect(buildCheckArgv({ stageFixes: true })).toEqual([
+      'node',
+      'filelinks',
+      'check',
+    ]);
+  });
 });
 
 describe('runHookCheck', () => {

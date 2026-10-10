@@ -2,6 +2,8 @@ export interface RunHookCheckOptions {
   cwd?: string;
   config?: string;
   runAgents?: boolean;
+  /** With `runAgents`: stage the missing companions the agents wrote (`--stage-fixes`). */
+  stageFixes?: boolean;
   json?: boolean;
   /** Defaults to `process.env`. */
   env?: NodeJS.ProcessEnv;
@@ -24,6 +26,9 @@ export function buildCheckArgv(options: RunHookCheckOptions = {}): string[] {
   argv.push('check');
   if (options.runAgents) {
     argv.push('--run-agents');
+    if (options.stageFixes) {
+      argv.push('--stage-fixes');
+    }
   }
   return argv;
 }

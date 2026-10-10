@@ -84,6 +84,10 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Check staged files against declared links')
     .option('--run-agents', 'Run agents for policy-eligible links after check')
     .option(
+      '--stage-fixes',
+      'With --run-agents: git add the missing companions the agents wrote, then re-check',
+    )
+    .option(
       '--cursor-api-key <key>',
       'Cursor API key override for --run-agents',
     )
@@ -96,14 +100,21 @@ export async function runCli(argv: string[]): Promise<void> {
         const g = globalOpts(this);
         const opts = this.opts() as {
           runAgents?: boolean;
+          stageFixes?: boolean;
           cursorApiKey?: string;
           claudeToken?: string;
         };
+        if (opts.stageFixes && !opts.runAgents) {
+          console.error('--stage-fixes requires --run-agents');
+          process.exitCode = 1;
+          return;
+        }
         process.exitCode = await runCheck({
           cwd: g.cwd,
           configPath: g.configPath,
           json: g.json,
           runAgents: Boolean(opts.runAgents),
+          stageFixes: Boolean(opts.stageFixes),
           cursorApiKey: opts.cursorApiKey,
           claudeToken: opts.claudeToken,
         });

@@ -68,7 +68,7 @@ Then keep `npx lint-staged` in your hook (for example `.husky/pre-commit`). Use 
 The hook calls `filelinks-git-hook run`, which runs `filelinks check` in-process and exits with its code:
 
 ```bash
-filelinks-git-hook run [--cwd <dir>] [--config <path>] [--run-agents] [--json]
+filelinks-git-hook run [--cwd <dir>] [--config <path>] [--run-agents [--stage-fixes]] [--json]
 ```
 
 ## Skipping a commit check
@@ -83,10 +83,12 @@ git commit --no-verify -m "wip"        # skip all hooks
 Agents are opt-in. Install the hook with a custom command:
 
 ```bash
-npx filelinks-git-hook install --command "npx --no-install filelinks-git-hook run --run-agents"
+npx filelinks-git-hook install --command "npx --no-install filelinks-git-hook run --run-agents --stage-fixes"
 ```
 
-`CURSOR_API_KEY` must be available to the hook (env or `.env.local`).
+`--stage-fixes` stages the companions the agent wrote, so the commit goes through once they are fixed. Without it, the hook still fails and lists the files to `git add`.
+
+Credentials must be available to the hook: `CURSOR_API_KEY` for Cursor; for Claude Code either the device login (`claude.auth: 'device'`) or `CLAUDE_CODE_OAUTH_TOKEN` (`claude.auth: 'token'`), from the env or `.env.local`.
 
 ## Uninstall
 

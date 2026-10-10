@@ -81,12 +81,17 @@ export async function runGitHookCli(argv: string[]): Promise<void> {
     .option('--cwd <dir>', 'working directory passed to filelinks')
     .option('--config <path>', 'path to config file')
     .option('--run-agents', 'run agents for policy-eligible links')
+    .option(
+      '--stage-fixes',
+      'with --run-agents: stage the missing companions the agents wrote',
+    )
     .option('--json', 'machine-readable JSON on stdout')
     .action(
       async (opts: {
         cwd?: string;
         config?: string;
         runAgents?: boolean;
+        stageFixes?: boolean;
         json?: boolean;
       }) => {
         try {

@@ -15,6 +15,13 @@ export type AgentRunSummaryJson = {
   suggestion?: string;
 };
 
+/** A missing companion an agent wrote during `check --run-agents`. */
+export type AgentFixJson = {
+  path: string;
+  /** True when `--stage-fixes` staged it. */
+  staged: boolean;
+};
+
 export type ListRowJson = {
   trigger: string;
   affectedFile: string;
@@ -26,13 +33,18 @@ export type ListRowJson = {
 export function printCheckJson(
   violations: CheckViolationJson[],
   agentRuns?: AgentRunSummaryJson[],
+  agentFixes?: AgentFixJson[],
 ): void {
   const payload: {
     violations: CheckViolationJson[];
     agentRuns?: AgentRunSummaryJson[];
+    agentFixes?: AgentFixJson[];
   } = { violations };
   if (agentRuns !== undefined) {
     payload.agentRuns = agentRuns;
+  }
+  if (agentFixes !== undefined) {
+    payload.agentFixes = agentFixes;
   }
   console.log(JSON.stringify(payload, null, 2));
 }

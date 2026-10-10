@@ -18,6 +18,9 @@ const mockCore = vi.hoisted(() => ({
   readAffectedContents: vi.fn(),
   buildAgentPrompt: vi.fn(),
   getAgentProvider: vi.fn(),
+  snapshotDirtyPaths: vi.fn(),
+  changedSinceSnapshot: vi.fn(),
+  stagePaths: vi.fn(),
   normalizeError: vi.fn((e: unknown) => ({
     message: e instanceof Error ? e.message : String(e),
     exitCode: 1 as const,
@@ -373,5 +376,109 @@ describe('runCheck agent orchestration', () => {
     ]);
 
     log.mockRestore();
+  });
+
+  describe('agent fixes (--stage-fixes)', () => {
+    const severe = { ...entry, severity: 'error' as const };
+    const coverage = {
+      entry: severe,
+      triggerMatched: true,
+      affectMatched: false,
+      triggerPaths: ['apps/foo.ts'],
+      affectPaths: [],
+      missingAffected: [{ file: 'docs/x.md', reason: 'sync' }],
+    };
+
+    beforeEach(() => {
+      mockCore.matchStagedLinks.mockImplementation((staged: string[]) =>
+        staged.includes('docs/x.md')
+          ? [{ entry: severe, missingAffected: [] }]
+          : [
+              {
+                entry: severe,
+                missingAffected: [{ file: 'docs/x.md', reason: 'sync' }],
+              },
+            ],
+      );
+      mockCore.classifyStagedLinks.mockImplementation(
+        (paths: string[], links: unknown[]) =>
+          links.length === 1 && paths.includes('docs/x.md')
+            ? [{ ...coverage, affectPaths: ['docs/x.md'] }]
+            : [coverage],
+      );
+      mockCore.shouldRunAgentForLink.mockReturnValue(true);
+      mockCore.snapshotDirtyPaths
+        .mockReturnValueOnce(new Map([['notes.md', 'a']]))
+        .mockReturnValueOnce(
+          new Map([
+            ['notes.md', 'a'],
+            ['docs/x.md', 'b'],
+          ]),
+        );
+      mockCore.changedSinceSnapshot.mockReturnValue(['docs/x.md']);
+      mockCore.loadFileLinksConfig.mockReturnValue({
+        links: [severe],
+        config: { agent: { provider: 'cursor' } },
+      });
+    });
+
+    it('stages the companion the agent wrote, re-checks and exits 0', async () => {
+      mockCore.getStagedFilePaths
+        .mockReturnValueOnce(['apps/foo.ts'])
+        .mockReturnValueOnce(['apps/foo.ts', 'docs/x.md']);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const code = await runCheck({
+        cwd: '/repo',
+        json: true,
+        runAgents: true,
+        stageFixes: true,
+      });
+
+      expect(mockCore.stagePaths).toHaveBeenCalledWith('/repo', ['docs/x.md']);
+      expect(code).toBe(0);
+      const payload = JSON.parse(String(log.mock.calls.at(-1)?.[0]));
+      expect(payload.violations).toEqual([]);
+      expect(payload.agentFixes).toEqual([{ path: 'docs/x.md', staged: true }]);
+    });
+
+    it('without --stage-fixes, lists the fix unstaged and keeps exit 1', async () => {
+      const err = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const code = await runCheck({
+        cwd: '/repo',
+        json: false,
+        runAgents: true,
+      });
+
+      expect(mockCore.stagePaths).not.toHaveBeenCalled();
+      expect(code).toBe(1);
+      expect(err.mock.calls.map((c) => String(c[0]))).toContain(
+        '[agent] updated docs/x.md (not staged): git add docs/x.md, or rerun with --stage-fixes',
+      );
+    });
+
+    it('ignores fix detection when git status is unavailable', async () => {
+      mockCore.snapshotDirtyPaths.mockReset();
+      mockCore.snapshotDirtyPaths.mockImplementation(() => {
+        throw new Error('not a git repo');
+      });
+      vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const code = await runCheck({
+        cwd: '/repo',
+        json: false,
+        runAgents: true,
+        stageFixes: true,
+      });
+
+      expect(mockCore.stagePaths).not.toHaveBeenCalled();
+      expect(code).toBe(1);
+    });
   });
 });

@@ -15,6 +15,9 @@ Declare semantic relationships between files — then **check staged git changes
 - **`filelinks suggest`** — read-only agent pass that prints suggested companion updates and never edits files
 - **`filelinks graph`** — terminal tree, Graphviz DOT, Mermaid, or a self-contained HTML page; `--staged` overlays what the current commit triggers
 - **`@vilancer/filelinks-git-hook`** — `filelinks-git-hook install` for plain git hooks or husky, plus lint-staged docs
+- **`check --run-agents --stage-fixes`** — stage the missing companions the agent wrote, re-check, exit 0 when fixed
+
+Release notes: [`docs/releases/v1.2.0.md`](docs/releases/v1.2.0.md)
 
 ## v1.1 release highlights
 
@@ -85,6 +88,8 @@ filelinks check --cwd /path/to/repo --config ./my/filelinks.config.ts
 3. `CURSOR_API_KEY` in `.env.local` under `--cwd`
 4. `CURSOR_API_KEY` in `.env` under `--cwd`
 
+**Agent fixes and `--stage-fixes`:** the agent edits files but never stages them, so a companion it fixed is still missing from the commit. filelinks lists those files (`[agent] updated <path> (not staged)`). Add **`--stage-fixes`** to `git add` them and re-check; a commit whose companions are now staged exits **0**. Only files the agents wrote during this run that are companions of a violated link get staged, never your own unstaged edits. JSON adds **`agentFixes: [{ path, staged }]`**.
+
 **Machine-readable output:** with **`--json --run-agents`**, the JSON payload includes an optional **`agentRuns`** array (per-link summaries) after agent execution. If the Cursor API key is missing, every policy-eligible link still gets an **`agentRuns`** entry with **`status: 'error'`** (not only the first link).
 
 **Prompt `temperature` / `maxTokens` (v1.1):** These optional fields are merged into config like other `prompt` settings, but they are **not** passed to Cursor **`Agent.create`** in v1.1. They appear as metadata lines in the assembled agent prompt text only. Use them as hints for the agent in the prompt until a future release wires SDK generation options (if supported).
@@ -97,6 +102,7 @@ Examples:
 filelinks check --run-agents
 filelinks check --run-agents --cursor-api-key "$CURSOR_API_KEY"
 filelinks check --json --run-agents
+filelinks check --run-agents --stage-fixes
 ```
 
 Example config (global defaults + per-link override):
