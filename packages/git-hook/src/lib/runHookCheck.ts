@@ -51,7 +51,5 @@ export async function runHookCheck(
   const { runCli } = await import('@vilancer/filelinks');
   process.exitCode = 0;
   await runCli(buildCheckArgv(options));
-  const code = Number(process.exitCode ?? 0) || 0;
-  process.exitCode = code;
-  return code;
+  return Number(process.exitCode);
 }

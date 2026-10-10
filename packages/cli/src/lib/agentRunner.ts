@@ -9,6 +9,7 @@ import {
   resolveAgentRunPolicy,
   resolvePrompt,
   shouldRunAgentForLink,
+  type AgentProviderId,
   type AgentRunMode,
   type FileLinkConfig,
   type FileLinkEntry,
@@ -47,6 +48,17 @@ export async function runEligibleAgents(
 
   const runs: AgentRunSummaryJson[] = [];
   let exitCode = 0;
+  // Same answer for every link of a provider: read the env and .env files once.
+  const credentials = new Map<AgentProviderId, string | undefined>();
+  const credentialFor = (provider: AgentProviderId) => {
+    if (!credentials.has(provider)) {
+      credentials.set(
+        provider,
+        resolveAgentCredential(provider, { cwd, ...opts.credentials }),
+      );
+    }
+    return credentials.get(provider);
+  };
 
   for (const cov of eligible) {
     const trigger = cov.entry.trigger;
@@ -55,10 +67,7 @@ export async function runEligibleAgents(
     }
     try {
       const agentConfig = resolveAgentConfig(config, cov.entry);
-      const apiKey = resolveAgentCredential(agentConfig.provider, {
-        cwd,
-        ...opts.credentials,
-      });
+      const apiKey = credentialFor(agentConfig.provider);
       if (agentConfig.provider === 'cursor' && !apiKey) {
         console.error(CURSOR_API_KEY_MISSING_MESSAGE);
         runs.push({ trigger, status: 'error' });
@@ -71,13 +80,13 @@ export async function runEligibleAgents(
         coverage: cov,
         triggerDiff: getStagedDiffForPaths(cwd, cov.triggerPaths),
         affectedFiles: readAffectedContents(cwd, [...cov.entry.affects]),
-        ...(mode === 'suggest' && { mode }),
+        mode,
       });
       const result = await provider.run({
         prompt,
         config: agentConfig,
         ctx: { apiKey },
-        ...(mode === 'suggest' && { mode }),
+        mode,
       });
       runs.push({
         trigger,

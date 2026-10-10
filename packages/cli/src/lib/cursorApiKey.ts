@@ -58,27 +58,43 @@ export function readEnvValueFromFile(
   return undefined;
 }
 
+/**
+ * First non-empty credential: the flag, then each of `names` in `process.env`, then in
+ * `.env.local`, then in `.env` under `cwd`.
+ */
+export function resolveCredential(opts: {
+  cwd: string;
+  flag?: string;
+  names: readonly string[];
+}): string | undefined {
+  const flag = opts.flag?.trim();
+  if (flag) {
+    return flag;
+  }
+  for (const name of opts.names) {
+    const value = process.env[name]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+  for (const file of ['.env.local', '.env']) {
+    for (const name of opts.names) {
+      const value = readEnvValueFromFile(join(opts.cwd, file), name);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
 /** Resolve Cursor API key: flag > process.env > `.env.local` > `.env` under `cwd`. */
 export function resolveCursorApiKey(
   opts: ResolveCursorApiKeyOptions,
 ): string | undefined {
-  const flagApiKey = opts.cursorApiKey?.trim();
-  if (flagApiKey) {
-    return flagApiKey;
-  }
-
-  const envApiKey = process.env[CURSOR_API_KEY_ENV_NAME]?.trim();
-  if (envApiKey) {
-    return envApiKey;
-  }
-
-  const envLocalApiKey = readEnvValueFromFile(
-    join(opts.cwd, '.env.local'),
-    CURSOR_API_KEY_ENV_NAME,
-  );
-  if (envLocalApiKey) {
-    return envLocalApiKey;
-  }
-
-  return readEnvValueFromFile(join(opts.cwd, '.env'), CURSOR_API_KEY_ENV_NAME);
+  return resolveCredential({
+    cwd: opts.cwd,
+    flag: opts.cursorApiKey,
+    names: [CURSOR_API_KEY_ENV_NAME],
+  });
 }

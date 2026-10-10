@@ -1,12 +1,10 @@
-import { join } from 'node:path';
-
 import {
   ANTHROPIC_API_KEY_ENV_NAME,
   CLAUDE_OAUTH_TOKEN_ENV_NAME,
   type AgentProviderId,
 } from '@vilancer/filelinks-core';
 
-import { readEnvValueFromFile, resolveCursorApiKey } from './cursorApiKey.js';
+import { resolveCredential, resolveCursorApiKey } from './cursorApiKey.js';
 
 export type AgentCredentialFlags = {
   /** `--cursor-api-key` */
@@ -26,26 +24,11 @@ export function resolveClaudeToken(opts: {
   cwd: string;
   claudeToken?: string;
 }): string | undefined {
-  const flag = opts.claudeToken?.trim();
-  if (flag) {
-    return flag;
-  }
-  const names = [CLAUDE_OAUTH_TOKEN_ENV_NAME, ANTHROPIC_API_KEY_ENV_NAME];
-  for (const name of names) {
-    const value = process.env[name]?.trim();
-    if (value) {
-      return value;
-    }
-  }
-  for (const file of ['.env.local', '.env']) {
-    for (const name of names) {
-      const value = readEnvValueFromFile(join(opts.cwd, file), name);
-      if (value) {
-        return value;
-      }
-    }
-  }
-  return undefined;
+  return resolveCredential({
+    cwd: opts.cwd,
+    flag: opts.claudeToken,
+    names: [CLAUDE_OAUTH_TOKEN_ENV_NAME, ANTHROPIC_API_KEY_ENV_NAME],
+  });
 }
 
 /** Credential passed to the provider as `ctx.apiKey` (may be undefined; providers decide). */

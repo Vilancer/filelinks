@@ -4,7 +4,7 @@ import type { AgentClaudeAuth, AgentProviderId, AgentRuntime } from './schema';
 export const AGENT_PROVIDER_IDS: readonly AgentProviderId[] = [
   'cursor',
   'claude',
-] as const;
+];
 
 /** Short labels for CLI pickers and docs. */
 export const AGENT_PROVIDER_DESCRIPTIONS: Record<AgentProviderId, string> = {
@@ -31,7 +31,7 @@ export const AGENT_PROVIDER_RUNTIMES: Record<
 export const CLAUDE_AUTH_MODES: readonly AgentClaudeAuth[] = [
   'device',
   'token',
-] as const;
+];
 
 export const CLAUDE_AUTH_DESCRIPTIONS: Record<AgentClaudeAuth, string> = {
   device:

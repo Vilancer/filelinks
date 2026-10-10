@@ -411,7 +411,7 @@ describe('[e2e] suggest, graph and claude wiring', () => {
       mode?: string;
       ctx: unknown;
     };
-    expect(input.mode).toBeUndefined();
+    expect(input.mode).toBe('edit');
     expect(input.ctx).toEqual({ apiKey: 'sk-ant-oat01-e2e' });
   });
 
