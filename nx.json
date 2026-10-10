@@ -15,9 +15,9 @@
     }
   },
   "release": {
-    "projects": ["core", "cli"],
+    "projects": ["core", "cli", "git-hook"],
     "version": {
-      "preVersionCommand": "pnpm dlx nx run-many -t build --projects=core,cli"
+      "preVersionCommand": "pnpm dlx nx run-many -t build --projects=core,cli,git-hook"
     }
   },
   "plugins": [
