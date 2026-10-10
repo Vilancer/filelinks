@@ -177,7 +177,7 @@ importers:
   packages/git-hook:
     dependencies:
       '@vilancer/filelinks':
-        specifier: workspace:*
+        specifier: link:../cli
         version: link:../cli
       commander:
         specifier: ^13.1.0
