@@ -1,6 +1,6 @@
 {
   "name": "@vilancer/filelinks",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "CLI for filelinks: declare which files belong together, check staged git changes against them, graph them, and let Cursor or Claude Code suggest or make the companion updates. Install with @vilancer/filelinks-core.",
   "type": "module",
   "main": "./dist/src/index.js",

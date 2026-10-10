@@ -111,5 +111,5 @@ Removes the block; if only a shebang is left, the hook file is deleted.
 | **`@vilancer/filelinks-core`**            | [npm](https://www.npmjs.com/package/@vilancer/filelinks-core)     | `defineLinks`, matching, agent providers |
 | **`@vilancer/filelinks-git-hook`** (this) | [npm](https://www.npmjs.com/package/@vilancer/filelinks-git-hook) | git / husky hook installer               |
 
-Release notes: [v1.2.0](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.0.md) ·
+Release notes: [v1.2.1](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.1.md), [v1.2.0](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.0.md) ·
 Source and issues: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks)
