@@ -124,22 +124,26 @@ export function listPathCandidatesWithMeta(cwd: string): PathCandidateMeta {
     }
     return toMeta(set, directories);
   } catch {
-    // Not a git work tree: one filesystem walk. Directories come back with a trailing `/`.
-    set.clear();
-    directories.clear();
-    const entries = globSync('**/*', {
-      cwd: resolved,
-      dot: false,
-      onlyFiles: false,
-      expandDirectories: false,
-      ignore: ['**/node_modules/**', '**/.git/**'],
-    });
-    for (const e of entries) {
-      const norm = toPosix(e).replace(/\/+$/, '');
-      addWithAncestors(norm, e.endsWith('/'), set, directories);
-    }
-    return toMeta(set, directories);
+    return listFromFilesystem(resolved);
   }
+}
+
+/** Not a git work tree: one filesystem walk. Directories come back with a trailing `/`. */
+function listFromFilesystem(root: string): PathCandidateMeta {
+  const set = new Set<string>();
+  const directories = new Set<string>();
+  const entries = globSync('**/*', {
+    cwd: root,
+    dot: false,
+    onlyFiles: false,
+    expandDirectories: false,
+    ignore: ['**/node_modules/**', '**/.git/**'],
+  });
+  for (const e of entries) {
+    const norm = toPosix(e).replace(/\/+$/, '');
+    addWithAncestors(norm, e.endsWith('/'), set, directories);
+  }
+  return toMeta(set, directories);
 }
 
 /** Substring filter (case-insensitive); caps result count. */
