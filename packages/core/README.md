@@ -116,5 +116,5 @@ console.log(result.resultText);
 | [`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core) (this)  | Library API                                                   |
 | [`@vilancer/filelinks-git-hook`](https://www.npmjs.com/package/@vilancer/filelinks-git-hook) | Pre-commit hook installer                                     |
 
-Release notes: [v1.2.0](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.0.md) ·
+Release notes: [docs/releases](https://github.com/Vilancer/filelinks/tree/main/docs/releases) ·
 Source and issues: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks)

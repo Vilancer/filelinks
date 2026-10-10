@@ -203,5 +203,5 @@ lint-staged setups.
 | [`@vilancer/filelinks-core`](https://www.npmjs.com/package/@vilancer/filelinks-core)         | `defineLinks`, matching, git helpers, agent providers, link graph |
 | [`@vilancer/filelinks-git-hook`](https://www.npmjs.com/package/@vilancer/filelinks-git-hook) | Pre-commit hook installer (`filelinks-git-hook`)                  |
 
-Release notes: [v1.2.0](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.0.md) ·
+Release notes: [docs/releases](https://github.com/Vilancer/filelinks/tree/main/docs/releases) ·
 Source and issues: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks)

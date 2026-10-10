@@ -1,6 +1,6 @@
 {
   "name": "@vilancer/filelinks-git-hook",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Install a filelinks check into git pre-commit hooks (plain .git/hooks or husky). Provides the filelinks-git-hook binary.",
   "type": "module",
   "main": "./dist/src/index.js",

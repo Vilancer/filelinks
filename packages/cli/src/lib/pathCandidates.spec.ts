@@ -1,8 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   filterPaths,
   isSearchableCandidate,
+  listPathCandidatesWithMeta,
   toPosix,
 } from './pathCandidates.js';
 
@@ -26,5 +38,65 @@ describe('pathCandidates', () => {
     expect(isSearchableCandidate('node_modules/pkg/index.js')).toBe(false);
     expect(isSearchableCandidate('a/.pnpm/store')).toBe(false);
     expect(isSearchableCandidate('dist/index.js')).toBe(false);
+  });
+
+  describe('listPathCandidatesWithMeta (real directories)', () => {
+    const dirs: string[] = [];
+    const scratch = (): string => {
+      const dir = mkdtempSync(join(tmpdir(), 'filelinks-paths-'));
+      dirs.push(dir);
+      mkdirSync(join(dir, 'apps/api/docs'), { recursive: true });
+      mkdirSync(join(dir, 'node_modules/pkg'), { recursive: true });
+      mkdirSync(join(dir, '.hidden'), { recursive: true });
+      writeFileSync(join(dir, 'apps/api/docs/openapi.yaml'), 'x');
+      writeFileSync(join(dir, 'apps/api/user.ts'), 'x');
+      writeFileSync(join(dir, 'node_modules/pkg/index.js'), 'x');
+      writeFileSync(join(dir, '.hidden/secret.txt'), 'x');
+      return dir;
+    };
+
+    afterEach(() => {
+      for (const dir of dirs.splice(0)) {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('globs files and directories outside git, skipping node_modules and dot paths', () => {
+      const { candidates, directories } = listPathCandidatesWithMeta(scratch());
+      expect(candidates).toEqual([
+        'apps',
+        'apps/api',
+        'apps/api/docs',
+        'apps/api/docs/openapi.yaml',
+        'apps/api/user.ts',
+      ]);
+      expect([...directories].sort()).toEqual([
+        'apps',
+        'apps/api',
+        'apps/api/docs',
+      ]);
+    });
+
+    it('keeps a symlinked directory selectable outside git', () => {
+      const dir = scratch();
+      mkdirSync(join(dir, 'shared/docs'), { recursive: true });
+      writeFileSync(join(dir, 'shared/docs/a.md'), 'x');
+      symlinkSync('shared/docs', join(dir, 'docs'));
+      const { candidates, directories } = listPathCandidatesWithMeta(dir);
+      expect(candidates).toContain('docs');
+      expect(candidates).toContain('docs/a.md');
+      expect(directories.has('docs')).toBe(true);
+    });
+
+    it('lists tracked and untracked files plus their directories inside git', () => {
+      const dir = scratch();
+      execFileSync('git', ['init', '-q'], { cwd: dir });
+      writeFileSync(join(dir, '.gitignore'), 'node_modules/\n');
+      const { candidates, directories } = listPathCandidatesWithMeta(dir);
+      expect(candidates).toContain('apps/api/user.ts');
+      expect(candidates).toContain('apps/api/docs/openapi.yaml');
+      expect(candidates).not.toContain('node_modules/pkg/index.js');
+      expect(directories.has('apps/api/docs')).toBe(true);
+    });
   });
 });

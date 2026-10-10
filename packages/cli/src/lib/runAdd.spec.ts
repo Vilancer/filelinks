@@ -259,6 +259,7 @@ describe('summarizeExistingGlobalAgent', () => {
     expect(summary).toBeUndefined();
   });
 
+  // Loads a real filelinks.config.ts through jiti: seconds on a cold or busy machine.
   it('returns compact summary for existing global agent', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'filelinks-add-'));
     const cfgPath = path.join(tmp, 'filelinks.config.ts');
@@ -292,5 +293,5 @@ export default defineLinks(
     expect(summary).toContain('runtime=local');
     expect(summary).toContain('model=composer-2.5');
     expect(summary).toContain('cwd=.');
-  });
+  }, 30_000);
 });
