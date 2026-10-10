@@ -1,4 +1,5 @@
 import type { AgentProviderId } from '../schema';
+import { claudeAgentProvider } from './claudeProvider';
 import { cursorAgentProvider } from './cursorProvider';
 import {
   getAgentProvider,
@@ -10,6 +11,7 @@ import type {
   AgentProvider,
   AgentProviderContext,
   AgentRunInput,
+  AgentRunMode,
   AgentRunResult,
 } from './types';
 
@@ -18,8 +20,17 @@ export type {
   AgentProvider,
   AgentProviderContext,
   AgentRunInput,
+  AgentRunMode,
   AgentRunResult,
 };
+
+export {
+  ANTHROPIC_API_KEY_ENV_NAME,
+  CLAUDE_OAUTH_TOKEN_ENV_NAME,
+  claudeTokenFromEnv,
+  createClaudeAgentProvider,
+  type ClaudeAgentSdk,
+} from './claudeProvider';
 
 export {
   expandCursorModelOptions,
@@ -39,6 +50,7 @@ export async function listAgentModels(
 
 export function registerBuiltInProviders(): void {
   registerAgentProvider(cursorAgentProvider);
+  registerAgentProvider(claudeAgentProvider);
 }
 
 registerBuiltInProviders();

@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import * as path from 'node:path';
 
+import type { AgentRunMode } from './providers/types';
 import type { StagedLinkCoverage } from './stagedClassifier';
 import type { AffectedFile, PromptConfig } from './schema';
 
@@ -64,8 +65,10 @@ export function buildAgentPrompt(input: {
   coverage: StagedLinkCoverage;
   triggerDiff: string;
   affectedFiles: AffectedFileContent[];
+  /** `suggest` appends read-only instructions; `edit` (default) keeps the v1.1 prompt. */
+  mode?: AgentRunMode;
 }): string {
-  const { prompt, coverage, triggerDiff, affectedFiles } = input;
+  const { prompt, coverage, triggerDiff, affectedFiles, mode } = input;
   const { entry, triggerPaths } = coverage;
   const lines: string[] = [];
 
@@ -119,5 +122,16 @@ export function buildAgentPrompt(input: {
     }
   }
 
+  if (mode === 'suggest') {
+    lines.push('## Task');
+    lines.push(SUGGEST_INSTRUCTIONS);
+  }
+
   return lines.join('\n').trimEnd();
 }
+
+export const SUGGEST_INSTRUCTIONS = [
+  'Do not modify any files. Review the staged trigger changes against each affected file and reply with suggestions only.',
+  'For each affected file: say whether it needs an update to stay in sync, and if so give the concrete change (a unified diff when practical, otherwise precise steps).',
+  'If nothing needs to change, say so in one line per file.',
+].join('\n');

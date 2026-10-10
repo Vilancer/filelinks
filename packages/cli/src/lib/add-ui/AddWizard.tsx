@@ -3,14 +3,21 @@ import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 
 import {
+  AGENT_PROVIDER_DESCRIPTIONS,
+  AGENT_PROVIDER_IDS,
+  CLAUDE_AUTH_DESCRIPTIONS,
+  CLAUDE_AUTH_MODES,
+  DEFAULT_CLAUDE_AUTH,
   LINK_TYPES,
   LINK_TYPE_DESCRIPTIONS,
   linkTypeForPathKinds,
 } from '@vilancer/filelinks-core';
 import {
   parseModelOptionKey,
+  type AgentClaudeAuth,
   type AgentModelOption,
   type AgentModelParameter,
+  type AgentProviderId,
   type AgentRunPolicy,
   type AgentRuntime,
   type AgentSettings,
@@ -54,6 +61,8 @@ type Phase =
   | 'linkType'
   | 'agentGlobalPrompt'
   | 'agentGlobalPolicy'
+  | 'agentGlobalProvider'
+  | 'agentGlobalClaudeAuth'
   | 'agentGlobalRuntime'
   | 'agentGlobalLocalCwd'
   | 'agentGlobalCloudRepos'
@@ -61,6 +70,8 @@ type Phase =
   | 'agentGlobalModelManual'
   | 'agentLinkPrompt'
   | 'agentLinkPolicy'
+  | 'agentLinkProvider'
+  | 'agentLinkClaudeAuth'
   | 'agentLinkRuntime'
   | 'agentLinkLocalCwd'
   | 'agentLinkCloudRepos'
@@ -116,6 +127,10 @@ export function AddWizard({
   );
   const [globalAgentRunPolicy, setGlobalAgentRunPolicy] =
     useState<AgentRunPolicy>('trigger-only');
+  const [globalProvider, setGlobalProvider] =
+    useState<AgentProviderId>('cursor');
+  const [globalClaudeAuth, setGlobalClaudeAuth] =
+    useState<AgentClaudeAuth>(DEFAULT_CLAUDE_AUTH);
   const [globalAgentModelDraft, setGlobalAgentModelDraft] = useState('');
   const [globalModelOptions, setGlobalModelOptions] = useState<
     AgentModelOption[]
@@ -128,6 +143,9 @@ export function AddWizard({
   );
   const [entryAgentRunPolicy, setEntryAgentRunPolicy] =
     useState<AgentRunPolicy>('trigger-only');
+  const [entryProvider, setEntryProvider] = useState<AgentProviderId>('cursor');
+  const [entryClaudeAuth, setEntryClaudeAuth] =
+    useState<AgentClaudeAuth>(DEFAULT_CLAUDE_AUTH);
   const [entryAgentModelDraft, setEntryAgentModelDraft] = useState('');
   const [entryModelOptions, setEntryModelOptions] = useState<
     AgentModelOption[]
@@ -389,10 +407,13 @@ export function AddWizard({
     runtime: AgentRuntime,
     runPolicy: AgentRunPolicy = 'trigger-only',
     values: { localCwd?: string; cloudRepos?: string[] },
+    provider: AgentProviderId = 'cursor',
+    claudeAuth: AgentClaudeAuth = DEFAULT_CLAUDE_AUTH,
   ): AgentSettings => ({
     runPolicy,
-    provider: 'cursor',
+    provider,
     runtime,
+    ...(provider === 'claude' && { claude: { auth: claudeAuth } }),
     ...(runtime === 'local'
       ? { local: { cwd: values.localCwd ?? '.' } }
       : { cloud: { repos: values.cloudRepos ?? [] } }),
@@ -850,8 +871,7 @@ export function AddWizard({
       <Box flexDirection="column">
         <Text bold>Global agent defaults (optional)</Text>
         <Text dimColor>
-          Set global config.agent defaults now? (provider cursor + explicit
-          runPolicy)
+          Set global config.agent defaults now? (provider + explicit runPolicy)
         </Text>
         {existingGlobalAgentSummary ? (
           <Text dimColor>
@@ -899,7 +919,46 @@ export function AddWizard({
           ]}
           onSelect={(v) => {
             setGlobalAgentRunPolicy(v);
-            setPhase('agentGlobalRuntime');
+            setPhase('agentGlobalProvider');
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalProvider') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global provider</Text>
+        <SelectableList<AgentProviderId>
+          items={AGENT_PROVIDER_IDS.map((id) => ({
+            label: `${id} — ${AGENT_PROVIDER_DESCRIPTIONS[id]}`,
+            value: id,
+          }))}
+          onSelect={(v) => {
+            setGlobalProvider(v);
+            setPhase(
+              v === 'claude' ? 'agentGlobalClaudeAuth' : 'agentGlobalRuntime',
+            );
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentGlobalClaudeAuth') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Global Claude auth</Text>
+        <Text dimColor>Claude Code runs locally (runtime local).</Text>
+        <SelectableList<AgentClaudeAuth>
+          items={CLAUDE_AUTH_MODES.map((mode) => ({
+            label: `${mode} — ${CLAUDE_AUTH_DESCRIPTIONS[mode]}`,
+            value: mode,
+          }))}
+          onSelect={(v) => {
+            setGlobalClaudeAuth(v);
+            setPhase('agentGlobalLocalCwd');
           }}
         />
       </Box>
@@ -932,7 +991,7 @@ export function AddWizard({
       <Box flexDirection="column">
         <Text bold>Global local.cwd</Text>
         <Text dimColor>
-          Path used by Cursor local runtime. Example: "." or an absolute path.
+          Path used by the local runtime. Example: "." or an absolute path.
         </Text>
         <Box marginTop={1}>
           <Text color="cyan">› </Text>
@@ -948,6 +1007,8 @@ export function AddWizard({
                 {
                   localCwd: cwd,
                 },
+                globalProvider,
+                globalClaudeAuth,
               );
               setGlobalAgent(nextGlobalAgent);
               void beginModelSelection('global', nextGlobalAgent);
@@ -984,6 +1045,8 @@ export function AddWizard({
                 {
                   cloudRepos: repos,
                 },
+                globalProvider,
+                globalClaudeAuth,
               );
               setGlobalAgent(nextGlobalAgent);
               void beginModelSelection('global', nextGlobalAgent);
@@ -1089,7 +1152,46 @@ export function AddWizard({
           ]}
           onSelect={(v) => {
             setEntryAgentRunPolicy(v);
-            setPhase('agentLinkRuntime');
+            setPhase('agentLinkProvider');
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkProvider') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link provider</Text>
+        <SelectableList<AgentProviderId>
+          items={AGENT_PROVIDER_IDS.map((id) => ({
+            label: `${id} — ${AGENT_PROVIDER_DESCRIPTIONS[id]}`,
+            value: id,
+          }))}
+          onSelect={(v) => {
+            setEntryProvider(v);
+            setPhase(
+              v === 'claude' ? 'agentLinkClaudeAuth' : 'agentLinkRuntime',
+            );
+          }}
+        />
+      </Box>
+    );
+  }
+
+  if (phase === 'agentLinkClaudeAuth') {
+    return (
+      <Box flexDirection="column">
+        <Text bold>Per-link Claude auth</Text>
+        <Text dimColor>Claude Code runs locally (runtime local).</Text>
+        <SelectableList<AgentClaudeAuth>
+          items={CLAUDE_AUTH_MODES.map((mode) => ({
+            label: `${mode} — ${CLAUDE_AUTH_DESCRIPTIONS[mode]}`,
+            value: mode,
+          }))}
+          onSelect={(v) => {
+            setEntryClaudeAuth(v);
+            setPhase('agentLinkLocalCwd');
           }}
         />
       </Box>
@@ -1135,6 +1237,8 @@ export function AddWizard({
                 {
                   localCwd: cwd,
                 },
+                entryProvider,
+                entryClaudeAuth,
               );
               setEntryAgent(nextEntryAgent);
               void beginModelSelection('link', nextEntryAgent);
@@ -1169,6 +1273,8 @@ export function AddWizard({
                 {
                   cloudRepos: repos,
                 },
+                entryProvider,
+                entryClaudeAuth,
               );
               setEntryAgent(nextEntryAgent);
               void beginModelSelection('link', nextEntryAgent);

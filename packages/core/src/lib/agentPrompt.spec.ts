@@ -4,7 +4,11 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildAgentPrompt, readAffectedContents } from './agentPrompt';
+import {
+  buildAgentPrompt,
+  SUGGEST_INSTRUCTIONS,
+  readAffectedContents,
+} from './agentPrompt';
 import type { StagedLinkCoverage } from './stagedClassifier';
 import type { FileLinkEntry } from './schema';
 
@@ -91,11 +95,22 @@ describe('buildAgentPrompt', () => {
         },
       }),
       triggerDiff: '',
-      affectedFiles: [
-        { path: 'src/b.ts', reason: 'sync', content: 'updated' },
-      ],
+      affectedFiles: [{ path: 'src/b.ts', reason: 'sync', content: 'updated' }],
     });
     expect(prompt).toContain('No trigger files staged');
     expect(prompt).toContain('updated');
+  });
+
+  it('appends read-only task instructions in suggest mode only', () => {
+    const input = {
+      prompt: {},
+      coverage: coverageFixture({ triggerPaths: ['src/a.ts'] }),
+      triggerDiff: 'diff',
+      affectedFiles: [],
+    };
+    expect(buildAgentPrompt(input)).not.toContain(SUGGEST_INSTRUCTIONS);
+    const suggest = buildAgentPrompt({ ...input, mode: 'suggest' });
+    expect(suggest).toContain('## Task');
+    expect(suggest).toContain('Do not modify any files');
   });
 });

@@ -4,23 +4,23 @@
 
 - **`packages/core`** — `@vilancer/filelinks-core`: schema (`defineLinks`), `linkType` helpers, config loader (**jiti**), git reader, `matchStagedLinks`, `resolvePrompt`.
 - **`packages/cli`** — `@vilancer/filelinks` (CLI; bin name `filelinks`).
-- **`packages/git-hook`** — `@vilancer/filelinks-git-hook` (post-v1 hook helpers).
+- **`packages/git-hook`** — `@vilancer/filelinks-git-hook` (bin `filelinks-git-hook`: install / uninstall / run the pre-commit check).
 
-Planning and deep maps live under **`.planning/`** (roadmap, requirements, `codebase/*.md`).
+Planning and deep maps (roadmap, requirements, `codebase/*.md`) live **outside this repo**, in the maintainers' agent workspace (`../.planning/` when this repo is its `filelinks/` submodule). The rows below that point there are marked _workspace_.
 
 ## Where architecture, stack, and conventions live
 
-| Topic                                                                                                                   | Location                                                                                                                              |
-| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agents / AI** — Effect Schema as default for core models, barrels, `*.spec.ts` layout, lint/format, planning pointers | **`AGENTS.md`** (repo root)                                                                                                           |
-| **Packages & data flow** — Nx layout, `jiti` config, matcher, tool boundaries                                           | **`.planning/codebase/ARCHITECTURE.md`**                                                                                              |
-| **Tests** — Vitest, Nx `test` / `test-ci`, spec placement, `tsconfig.spec.json`                                         | **`.planning/codebase/TESTING.md`**                                                                                                   |
-| **Product / phases** — roadmap, requirements, per-phase context                                                         | **`.planning/ROADMAP.md`**, **`.planning/REQUIREMENTS.md`**, and **`.planning/phases/<name>/`** (e.g. **`04-cli-mvp/04-CONTEXT.md`**) |
-| **Path aliases**                                                                                                        | **`tsconfig.base.json`** (`@vilancer/filelinks-core`, etc.)                                                                           |
-| **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                                                     |
-| **Prettier**                                                                                                            | **`.prettierrc`**                                                                                                                     |
-| **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                                                               |
-| **AI agents (v1.1 shipped)** — `check --run-agents`, config, smoke                                                      | **README.md** → _Running agents (v1.1)_; this file → _AI agents (v1.1)_ below                                                         |
+| Topic                                                                                                                   | Location                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Agents / AI** — Effect Schema as default for core models, barrels, `*.spec.ts` layout, lint/format, planning pointers | **`AGENTS.md`** (repo root)                                                                          |
+| **Packages & data flow** — Nx layout, `jiti` config, matcher, tool boundaries                                           | _workspace_ `../.planning/codebase/ARCHITECTURE.md`                                                  |
+| **Tests** — Vitest, Nx `test` / `test-ci`, spec placement, `tsconfig.spec.json`                                         | _workspace_ `../.planning/codebase/TESTING.md`                                                       |
+| **Product / phases** — roadmap, requirements, per-phase context                                                         | _workspace_ `../.planning/ROADMAP.md`, `../.planning/REQUIREMENTS.md`, `../.planning/phases/<name>/` |
+| **Path aliases**                                                                                                        | **`tsconfig.base.json`** (`@vilancer/filelinks-core`, etc.)                                          |
+| **ESLint**                                                                                                              | Root **`eslint.config.mjs`** + **`packages/*/eslint.config.mjs`**                                    |
+| **Prettier**                                                                                                            | **`.prettierrc`**                                                                                    |
+| **Commits**                                                                                                             | **`commitlint.config.mjs`** (Conventional Commits; see Git hooks below)                              |
+| **AI agents (v1.1 shipped)** — `check --run-agents`, config, smoke                                                      | **README.md** → _Running agents (v1.1)_; this file → _AI agents (v1.1)_ below                        |
 
 **Quick conventions:** Public API from each package’s **`src/index.ts`**. Library code under **`packages/<name>/src/lib/`** with specs as **`*.spec.ts`** beside sources. Build output paths are per-package **`project.json`** → **`targets.build.options.outputPath`** (CLI: **`packages/cli/dist/`**, core: **`packages/core/dist/`**). If **`ARCHITECTURE.md`** or **`TESTING.md`** disagree with **`project.json`** or this file, treat the repo config and **`AGENTS.md`** as current.
 
@@ -166,6 +166,33 @@ CI and pre-commit **do not** call the live Cursor API. Agent behavior is covered
 - **`packages/core/src/lib/providers/cursorProvider.spec.ts`** — provider errors and SDK boundary (mocked).
 
 Run **`pnpm test`** and **`pnpm run cli:test:e2e`** from the repo root after CLI/core changes.
+
+## Claude Code provider, suggest, graph, git hook (v1.2)
+
+### Claude Code provider
+
+- Source: **`packages/core/src/lib/providers/claudeProvider.ts`**. `@anthropic-ai/claude-agent-sdk` is ESM-only while core compiles to CommonJS, so the SDK is resolved with `require.resolve` and loaded through a real dynamic `import()` (`loadClaudeAgentSdk`). Tests inject a fake SDK via `createClaudeAgentProvider({ loadSdk })` — never `vi.mock` the SDK.
+- Auth: `agent.claude.auth: 'device'` inherits the environment and loads Claude Code user/project/local settings; `'token'` injects exactly one of `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` (CLI order: `--claude-token` → env → `.env.local` → `.env`).
+- Tool lock-down: `tools` + `allowedTools` are `Read, Glob, Grep, Edit, Write` (edit) or `Read, Glob, Grep` (suggest), `permissionMode: 'dontAsk'`, `strictMcpConfig: true`.
+
+**Manual smoke (real Claude Code):** log in once with `claude` → `/login` (or `claude setup-token` and export `CLAUDE_CODE_OAUTH_TOKEN` with `claude.auth: 'token'`), set `agent.provider: 'claude'`, `runtime: 'local'`, `local.cwd: '.'`, stage a trigger, then:
+
+```bash
+filelinks suggest            # read-only; prints suggestions
+filelinks check --run-agents # may edit affected files
+```
+
+### `suggest` and the shared agent loop
+
+`check --run-agents` and `suggest` share **`packages/cli/src/lib/agentRunner.ts`** (`runEligibleAgents`). `suggest` passes `mode: 'suggest'` to `buildAgentPrompt` (appends read-only task instructions) and to `provider.run` (Cursor `plan` mode / Claude read-only tools).
+
+### `graph`
+
+Graph model: **`packages/core/src/lib/linkGraph.ts`** (`buildLinkGraph`, Effect Schema shapes, staged overlay reuses `classifyStagedLinks`). Renderers: **`packages/cli/src/lib/graphRender.ts`**. Command: **`packages/cli/src/lib/runGraph.ts`**.
+
+### Git hook package
+
+**`packages/git-hook`** is ESM and ships the `filelinks-git-hook` bin (`install`, `uninstall`, `run`). Its specs create real temp git repos. See **`packages/git-hook/README.md`** for husky / lint-staged usage.
 
 ## Releasing a milestone (main + tag + GitHub release)
 

@@ -10,13 +10,22 @@ export type AgentModelOption = {
 };
 
 export type AgentProviderContext = {
+  /** Provider credential: Cursor API key, or Claude setup token / Anthropic API key. */
   apiKey?: string;
 };
+
+/**
+ * `edit` lets the agent change files (`check --run-agents`); `suggest` is read-only and
+ * returns suggestions as `resultText` (`filelinks suggest`).
+ */
+export type AgentRunMode = 'edit' | 'suggest';
 
 export type AgentRunInput = {
   prompt: string;
   config: ResolvedAgentConfig;
   ctx?: AgentProviderContext;
+  /** Defaults to `edit`. */
+  mode?: AgentRunMode;
 };
 
 /** Successful run result. Failures throw `AgentRunFailedError` instead of returning an error status. */
@@ -29,7 +38,11 @@ export type AgentRunResult = {
 export interface AgentProvider {
   readonly id: AgentProviderId;
 
-  validateCredentials(ctx: AgentProviderContext): void;
+  /** Throws `AgentMissingApiKeyError` when the provider needs a credential that is missing. */
+  validateCredentials(
+    ctx: AgentProviderContext,
+    config?: Pick<ResolvedAgentConfig, 'claude'>,
+  ): void;
 
   listModels(ctx: AgentProviderContext): Promise<AgentModelOption[]>;
 

@@ -15,6 +15,7 @@ import {
   sortAgentModelOptions,
   validateResolvedAgentConfig,
   type AgentModelOption,
+  type AgentProviderId,
   type AgentSettings,
   type FileLinkConfig,
   type FileLinkEntry,
@@ -22,11 +23,11 @@ import {
 } from '@vilancer/filelinks-core';
 
 import { AddWizard } from './add-ui/AddWizard.js';
-import { resolveCursorApiKey } from './cursorApiKey.js';
+import { resolveAgentCredential } from './agentCredentials.js';
 import type { AddCommitPayload } from './add-ui/types.js';
 import { listPathCandidatesWithMeta } from './pathCandidates.js';
 
-const FALLBACK_MODELS: AgentModelOption[] = sortAgentModelOptions([
+const CURSOR_FALLBACK_MODELS: AgentModelOption[] = sortAgentModelOptions([
   {
     id: 'composer-2.5',
     label: 'Composer 2.5 (default)',
@@ -52,6 +53,17 @@ const FALLBACK_MODELS: AgentModelOption[] = sortAgentModelOptions([
     key: modelOptionKey('composer-2', [{ id: 'fast', value: 'false' }]),
   },
 ]);
+
+const CLAUDE_FALLBACK_MODELS: AgentModelOption[] = [
+  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5 (default)' },
+  { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5' },
+  { id: 'claude-haiku-5-5', label: 'Claude Haiku 5.5' },
+].map((m) => ({ ...m, key: modelOptionKey(m.id) }));
+
+const FALLBACK_MODELS: Record<AgentProviderId, AgentModelOption[]> = {
+  cursor: CURSOR_FALLBACK_MODELS,
+  claude: CLAUDE_FALLBACK_MODELS,
+};
 
 export function serializeFileLinksConfig(
   links: FileLinkEntry[],
@@ -153,21 +165,22 @@ export async function listWizardModels(
   agent: AgentSettings,
   cwd: string,
 ): Promise<AgentModelOption[]> {
+  const fallback = FALLBACK_MODELS[agent.provider ?? 'cursor'];
   try {
     const resolved = validateResolvedAgentConfig(agent);
     const provider = getAgentProvider(resolved.provider);
-    const apiKey = resolveCursorApiKey({ cwd });
-    provider.validateCredentials({ apiKey });
+    const apiKey = resolveAgentCredential(resolved.provider, { cwd });
+    provider.validateCredentials({ apiKey }, resolved);
     const liveModels = await provider.listModels({ apiKey });
     if (liveModels.length === 0) {
-      return FALLBACK_MODELS;
+      return fallback;
     }
     return sortAgentModelOptions(liveModels);
   } catch (e) {
     if (e instanceof AgentMissingApiKeyError) {
       throw e;
     }
-    return FALLBACK_MODELS;
+    return fallback;
   }
 }
 
@@ -203,6 +216,9 @@ export function summarizeExistingGlobalAgent(
         (p) => p.id === 'fast' && p.value === 'true',
       );
       parts.push(fast ? `model=${agent.model} (fast)` : `model=${agent.model}`);
+    }
+    if (agent.provider === 'claude') {
+      parts.push(`auth=${agent.claude?.auth ?? 'device'}`);
     }
     if (agent.runtime === 'local' && agent.local?.cwd) {
       parts.push(`cwd=${agent.local.cwd}`);

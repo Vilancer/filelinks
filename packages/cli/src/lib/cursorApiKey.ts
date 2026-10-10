@@ -11,11 +11,12 @@ export type ResolveCursorApiKeyOptions = {
 
 function unwrapEnvValue(rawValue: string): string {
   const value = rawValue.trim();
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1).trim();
+  const quote = value[0];
+  if (quote === '"' || quote === "'") {
+    const end = value.indexOf(quote, 1);
+    if (end !== -1) {
+      return value.slice(1, end).trim();
+    }
   }
   const hashIndex = value.indexOf('#');
   if (hashIndex === -1) {
@@ -24,7 +25,11 @@ function unwrapEnvValue(rawValue: string): string {
   return value.slice(0, hashIndex).trim();
 }
 
-function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
+/** First non-empty `NAME=value` for `envName` in a dotenv-style file. */
+export function readEnvValueFromFile(
+  filePath: string,
+  envName: string,
+): string | undefined {
   if (!existsSync(filePath)) {
     return undefined;
   }
@@ -37,7 +42,9 @@ function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
     if (trimmed.length === 0 || trimmed.startsWith('#')) {
       continue;
     }
-    const match = trimmed.match(/^(?:export\s+)?CURSOR_API_KEY\s*=\s*(.*)$/u);
+    const match = trimmed.match(
+      new RegExp(`^(?:export\\s+)?${envName}\\s*=\\s*(.*)$`, 'u'),
+    );
     if (!match) {
       continue;
     }
@@ -51,26 +58,43 @@ function readCursorApiKeyFromEnvFile(filePath: string): string | undefined {
   return undefined;
 }
 
+/**
+ * First non-empty credential: the flag, then each of `names` in `process.env`, then in
+ * `.env.local`, then in `.env` under `cwd`.
+ */
+export function resolveCredential(opts: {
+  cwd: string;
+  flag?: string;
+  names: readonly string[];
+}): string | undefined {
+  const flag = opts.flag?.trim();
+  if (flag) {
+    return flag;
+  }
+  for (const name of opts.names) {
+    const value = process.env[name]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+  for (const file of ['.env.local', '.env']) {
+    for (const name of opts.names) {
+      const value = readEnvValueFromFile(join(opts.cwd, file), name);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
 /** Resolve Cursor API key: flag > process.env > `.env.local` > `.env` under `cwd`. */
 export function resolveCursorApiKey(
   opts: ResolveCursorApiKeyOptions,
 ): string | undefined {
-  const flagApiKey = opts.cursorApiKey?.trim();
-  if (flagApiKey) {
-    return flagApiKey;
-  }
-
-  const envApiKey = process.env[CURSOR_API_KEY_ENV_NAME]?.trim();
-  if (envApiKey) {
-    return envApiKey;
-  }
-
-  const envLocalApiKey = readCursorApiKeyFromEnvFile(
-    join(opts.cwd, '.env.local'),
-  );
-  if (envLocalApiKey) {
-    return envLocalApiKey;
-  }
-
-  return readCursorApiKeyFromEnvFile(join(opts.cwd, '.env'));
+  return resolveCredential({
+    cwd: opts.cwd,
+    flag: opts.cursorApiKey,
+    names: [CURSOR_API_KEY_ENV_NAME],
+  });
 }

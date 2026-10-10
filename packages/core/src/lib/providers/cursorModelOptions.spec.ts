@@ -1,3 +1,4 @@
+import type { ModelListItem } from '@cursor/sdk';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,7 +9,7 @@ import {
   sortAgentModelOptions,
 } from './cursorModelOptions.js';
 
-const opusItem = {
+const opusItem: ModelListItem = {
   id: 'claude-opus-4-7',
   displayName: 'Opus 4.7',
   parameters: [
@@ -40,7 +41,7 @@ const opusItem = {
       values: [{ value: 'false' }, { value: 'true', displayName: 'Fast' }],
     },
   ],
-} as const;
+};
 
 const opusBaseline = new Map<string, string>([
   ['thinking', 'true'],

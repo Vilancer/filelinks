@@ -36,8 +36,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build core and cli
-        run: pnpm exec nx run-many -t build --projects=core,cli
+      - name: Build core, cli and git-hook
+        run: pnpm exec nx run-many -t build --projects=core,cli,git-hook
 
       - name: Test
         run: pnpm test
