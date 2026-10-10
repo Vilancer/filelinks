@@ -35,6 +35,9 @@
     "directory": "packages/git-hook"
   },
   "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@vilancer/filelinks": "workspace:*",
     "commander": "^13.1.0",

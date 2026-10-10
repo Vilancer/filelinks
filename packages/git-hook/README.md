@@ -1,5 +1,7 @@
 # @vilancer/filelinks-git-hook
 
+[![npm](https://img.shields.io/npm/v/@vilancer/filelinks-git-hook)](https://www.npmjs.com/package/@vilancer/filelinks-git-hook)
+
 Run **`filelinks check`** automatically on every commit. This package ships the **`filelinks-git-hook`** binary, which installs a small, idempotent block into your git `pre-commit` hook — plain `.git/hooks` or [husky](https://typicode.github.io/husky/).
 
 ## Install
@@ -9,7 +11,7 @@ pnpm add -D @vilancer/filelinks @vilancer/filelinks-core @vilancer/filelinks-git
 # or: npm install --save-dev @vilancer/filelinks @vilancer/filelinks-core @vilancer/filelinks-git-hook
 ```
 
-You also need a `filelinks.config.ts` (run `filelinks add` to create one).
+You also need a `filelinks.config.ts` (run `npx filelinks add` to create one). Requires **Node.js 20+**.
 
 ## Plain git hooks
 
@@ -17,7 +19,7 @@ You also need a `filelinks.config.ts` (run `filelinks add` to create one).
 npx filelinks-git-hook install
 ```
 
-This writes (or appends to) the hook at `git rev-parse --git-path hooks`/`pre-commit` — so worktrees and `core.hooksPath` are respected — and makes it executable:
+This writes the hook at `git rev-parse --git-path hooks`/`pre-commit` (so worktrees and `core.hooksPath` are respected) and makes it executable:
 
 ```sh
 # >>> filelinks >>>
@@ -27,7 +29,10 @@ fi
 # <<< filelinks <<<
 ```
 
-Re-running `install` replaces the block in place; anything else in the hook is left alone.
+If the hook already exists, the block is **inserted right after the shebang**, so the check runs first and your
+script keeps its own control flow (a hook ending in `exit 0` or `exec …` would never reach an appended block, and a
+failing last command would be masked by it). Re-running `install` replaces the block in place; `uninstall` gives
+back the original file.
 
 | Option            | Default                                   | Meaning                       |
 | ----------------- | ----------------------------------------- | ----------------------------- |
@@ -40,7 +45,7 @@ Re-running `install` replaces the block in place; anything else in the hook is l
 
 ```bash
 npx husky init                          # creates .husky/pre-commit
-npx filelinks-git-hook install --husky  # appends the filelinks block
+npx filelinks-git-hook install --husky  # adds the filelinks block at the top
 ```
 
 If a `.husky/` directory already exists at the repo root, `install` targets it automatically. Prefer to do it by hand? Add one line to `.husky/pre-commit`:
@@ -100,10 +105,11 @@ Removes the block; if only a shebang is left, the hook file is deleted.
 
 ## Related packages
 
-| Package                                   | npm                                                               | Role                                   |
-| ----------------------------------------- | ----------------------------------------------------------------- | -------------------------------------- |
-| **`@vilancer/filelinks`**                 | [npm](https://www.npmjs.com/package/@vilancer/filelinks)          | CLI binary                             |
-| **`@vilancer/filelinks-core`**            | [npm](https://www.npmjs.com/package/@vilancer/filelinks-core)     | `defineLinks`, matching, agent helpers |
-| **`@vilancer/filelinks-git-hook`** (this) | [npm](https://www.npmjs.com/package/@vilancer/filelinks-git-hook) | git / husky hook installer             |
+| Package                                   | npm                                                               | Role                                     |
+| ----------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| **`@vilancer/filelinks`**                 | [npm](https://www.npmjs.com/package/@vilancer/filelinks)          | CLI binary                               |
+| **`@vilancer/filelinks-core`**            | [npm](https://www.npmjs.com/package/@vilancer/filelinks-core)     | `defineLinks`, matching, agent providers |
+| **`@vilancer/filelinks-git-hook`** (this) | [npm](https://www.npmjs.com/package/@vilancer/filelinks-git-hook) | git / husky hook installer               |
 
-Full docs: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks).
+Release notes: [v1.2.0](https://github.com/Vilancer/filelinks/blob/main/docs/releases/v1.2.0.md) ·
+Source and issues: [github.com/Vilancer/filelinks](https://github.com/Vilancer/filelinks)

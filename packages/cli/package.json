@@ -1,7 +1,7 @@
 {
   "name": "@vilancer/filelinks",
   "version": "1.2.0",
-  "description": "CLI for filelinks: check staged git file-links and graph links, and run Cursor or Claude Code agents (--run-agents, suggest). filelinks add creates config if missing. Install with @vilancer/filelinks-core.",
+  "description": "CLI for filelinks: declare which files belong together, check staged git changes against them, graph them, and let Cursor or Claude Code suggest or make the companion updates. Install with @vilancer/filelinks-core.",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -39,6 +39,9 @@
     "directory": "packages/cli"
   },
   "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@vilancer/filelinks-core": "workspace:*",
     "commander": "^13.1.0",
